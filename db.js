@@ -1,7 +1,5 @@
 const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
-const XLSX = require('xlsx');
+const { RESEARCH_ITEMS } = require('./data/researchItems');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isReplitDb =
@@ -55,15 +53,17 @@ async function initDb() {
       research_item_id INTEGER NOT NULL REFERENCES research_items(id) ON DELETE CASCADE,
       current_level INTEGER NOT NULL DEFAULT 0 CHECK (current_level >= 0),
       blocked BOOLEAN NOT NULL DEFAULT FALSE,
+      power_per_level_override INTEGER,
+      time_minutes_override INTEGER,
       UNIQUE(user_id, research_item_id)
     )
   `);
 
-  // Автозаполнение research_items из Excel, если таблица пуста
-  await seedResearchItemsFromExcelIfEmpty();
+  // Автозаполнение research_items из JS-справочника, если таблица пуста
+  await seedResearchItemsFromConfigIfEmpty();
 }
 
-async function seedResearchItemsFromExcelIfEmpty() {
+async function seedResearchItemsFromConfigIfEmpty() {
   try {
     const countRes = await pool.query('SELECT COUNT(*)::int AS cnt FROM research_items');
     const count = countRes.rows[0]?.cnt || 0;
@@ -71,80 +71,46 @@ async function seedResearchItemsFromExcelIfEmpty() {
       return;
     }
 
-    const excelPath = path.join(__dirname, 'пункты исследования.xlsx');
-    if (!fs.existsSync(excelPath)) {
-      console.warn(
-        'Файл "пункты исследования.xlsx" не найден, автоимпорт research_items пропущен'
-      );
-      return;
-    }
-
-    const workbook = XLSX.readFile(excelPath);
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) {
-      console.warn('В Excel-файле нет листов, автоимпорт research_items пропущен');
-      return;
-    }
-
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    if (!rows || rows.length < 2) {
-      console.warn('В Excel-файле недостаточно строк, автоимпорт research_items пропущен');
-      return;
-    }
-
-    const dataRows = rows.slice(1); // пропускаем заголовок
-    const items = [];
-
-    for (const row of dataRows) {
-      if (!row || row.length === 0) continue;
-
-      // Ожидаемый формат строки: [code, name, max_level, power_per_level, time_minutes]
-      const code = (row[0] ?? '').toString().trim() || null;
-      const name = (row[1] ?? '').toString().trim();
-      const maxLevel = parseInt(row[2], 10) || 0;
-      const powerPerLevel = parseInt(row[3], 10) || 0;
-      const timeMinutes = parseInt(row[4], 10) || 0;
-
-      if (!name || maxLevel <= 0 || powerPerLevel < 0 || timeMinutes <= 0) {
-        continue;
-      }
-
-      items.push({ code, name, maxLevel, powerPerLevel, timeMinutes });
-    }
-
-    if (!items.length) {
-      console.warn(
-        'Не удалось получить ни одной валидной строки из Excel, автоимпорт research_items пропущен'
-      );
+    if (!Array.isArray(RESEARCH_ITEMS) || RESEARCH_ITEMS.length === 0) {
+      console.warn('RESEARCH_ITEMS пуст — заполните data/researchItems.js');
       return;
     }
 
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      for (const item of items) {
+      for (const item of RESEARCH_ITEMS) {
+        if (!item || !item.name) continue;
+        const code = item.code || null;
+        const maxLevel = Number.isFinite(item.maxLevel) ? item.maxLevel : 1;
+        const powerPerLevel = Number.isFinite(item.powerPerLevel)
+          ? item.powerPerLevel
+          : 0;
+        const timeMinutes = Number.isFinite(item.timeMinutes) ? item.timeMinutes : 1;
+
+        if (maxLevel <= 0 || timeMinutes <= 0 || powerPerLevel < 0) continue;
+
         await client.query(
           `
           INSERT INTO research_items (code, name, max_level, power_per_level, time_minutes)
           VALUES ($1, $2, $3, $4, $5)
           ON CONFLICT (code) DO NOTHING
         `,
-          [item.code, item.name, item.maxLevel, item.powerPerLevel, item.timeMinutes]
+          [code, item.name, maxLevel, powerPerLevel, timeMinutes]
         );
       }
       await client.query('COMMIT');
       console.log(
-        `Импортировано записей в research_items из Excel (новых по code): ${items.length}`
+        'Импортировано записей в research_items из RESEARCH_ITEMS (новых по code)'
       );
     } catch (err) {
       await client.query('ROLLBACK');
-      console.error('Ошибка при импорте research_items из Excel:', err);
+      console.error('Ошибка при импорте research_items из RESEARCH_ITEMS:', err);
     } finally {
       client.release();
     }
   } catch (err) {
-    console.error('Общая ошибка автоимпорта research_items из Excel:', err);
+    console.error('Общая ошибка автоимпорта research_items из RESEARCH_ITEMS:', err);
   }
 }
 

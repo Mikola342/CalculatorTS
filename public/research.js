@@ -101,7 +101,9 @@ async function loadResearchStateForUser() {
     for (const row of data) {
       researchState.userState[row.research_item_id] = {
         currentLevel: row.current_level,
-        blocked: !!row.blocked
+        blocked: !!row.blocked,
+        powerPerLevel: row.power_per_level_override,
+        timeMinutes: row.time_minutes_override
       };
     }
   } catch {
@@ -122,7 +124,10 @@ function renderResearchItems() {
       const state = researchState.userState[item.id] || {};
       const currentLevel = state.currentLevel || 0;
       const blocked = !!state.blocked;
-      const timeMinutes = item.time_minutes || 60;
+      const effectivePower =
+        state.powerPerLevel != null ? state.powerPerLevel : item.power_per_level;
+      const timeMinutes =
+        state.timeMinutes != null ? state.timeMinutes : item.time_minutes || 60;
       const days = Math.floor(timeMinutes / (24 * 60));
       const remAfterDays = timeMinutes % (24 * 60);
       const hours = Math.floor(remAfterDays / 60);
@@ -149,7 +154,7 @@ function renderResearchItems() {
             <input type="number"
               class="research-input power-input"
               min="0"
-              value="${item.power_per_level}"
+              value="${effectivePower}"
             />
           </div>
           <div class="research-cell time-cell">
@@ -356,7 +361,9 @@ async function saveResearchState() {
     items: config.map((c) => ({
       researchItemId: c.id,
       currentLevel: c.currentLevel,
-      blocked: c.blocked
+      blocked: c.blocked,
+      powerPerLevel: c.powerPerLevel,
+      timeMinutes: c.timeMinutes
     }))
   };
 

@@ -27,7 +27,9 @@ router.get('/state', requireUser, async (req, res) => {
         rs.id,
         rs.research_item_id,
         rs.current_level,
-        rs.blocked
+        rs.blocked,
+        rs.power_per_level_override,
+        rs.time_minutes_override
       FROM research_states rs
       WHERE rs.user_id = $1
       ORDER BY rs.research_item_id ASC
@@ -56,7 +58,13 @@ router.post('/state', requireUser, async (req, res) => {
       await client.query('BEGIN');
 
       for (const item of items) {
-        const { researchItemId, currentLevel, blocked } = item || {};
+        const {
+          researchItemId,
+          currentLevel,
+          blocked,
+          powerPerLevel,
+          timeMinutes
+        } = item || {};
 
         if (!researchItemId || currentLevel == null) {
           continue;
@@ -64,15 +72,30 @@ router.post('/state', requireUser, async (req, res) => {
 
         const level = Math.max(0, parseInt(currentLevel, 10) || 0);
         const isBlocked = !!blocked;
+        const powerOverride =
+          powerPerLevel != null ? Math.max(0, parseInt(powerPerLevel, 10) || 0) : null;
+        const timeOverride =
+          timeMinutes != null ? Math.max(1, parseInt(timeMinutes, 10) || 1) : null;
 
         await client.query(
           `
-          INSERT INTO research_states (user_id, research_item_id, current_level, blocked)
-          VALUES ($1, $2, $3, $4)
+          INSERT INTO research_states (
+            user_id,
+            research_item_id,
+            current_level,
+            blocked,
+            power_per_level_override,
+            time_minutes_override
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
           ON CONFLICT (user_id, research_item_id)
-          DO UPDATE SET current_level = EXCLUDED.current_level, blocked = EXCLUDED.blocked
+          DO UPDATE SET
+            current_level = EXCLUDED.current_level,
+            blocked = EXCLUDED.blocked,
+            power_per_level_override = EXCLUDED.power_per_level_override,
+            time_minutes_override = EXCLUDED.time_minutes_override
         `,
-          [userId, researchItemId, level, isBlocked]
+          [userId, researchItemId, level, isBlocked, powerOverride, timeOverride]
         );
       }
 
