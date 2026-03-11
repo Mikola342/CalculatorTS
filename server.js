@@ -6,7 +6,8 @@ const path = require('path');
 const { initDb } = require('./db');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors());
 app.use(express.json());
@@ -14,7 +15,10 @@ app.use(session({
   secret: process.env.ADMIN_PASSWORD || 'fallback-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 8 }
+  cookie: {
+    secure: isProduction,
+    maxAge: 1000 * 60 * 60 * 8
+  }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
