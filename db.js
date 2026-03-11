@@ -67,6 +67,16 @@ async function initDb() {
     )
   `);
 
+  // На старых БД могли не быть колонок переопределения силы и времени
+  await pool.query(`
+    ALTER TABLE research_states
+    ADD COLUMN IF NOT EXISTS power_per_level_override INTEGER
+  `);
+  await pool.query(`
+    ALTER TABLE research_states
+    ADD COLUMN IF NOT EXISTS time_minutes_override INTEGER
+  `);
+
   // Добавляем колонку группы, если её ещё нет (на случай старых БД)
   await pool.query(`
     ALTER TABLE research_items

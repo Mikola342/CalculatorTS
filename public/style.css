@@ -642,7 +642,7 @@ body {
 
 .research-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.8fr);
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 0.7fr);
   gap: 20px;
   margin-bottom: 20px;
 }
