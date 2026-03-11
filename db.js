@@ -9,8 +9,16 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isReplitDb ? false : isProduction ? { rejectUnauthorized: false } : false
 });
-
+/////////////////
 async function initDb() {
+  // Опциональное пересоздание таблиц исследований (например, после изменения схемы)
+  // ВНИМАНИЕ: это удалит все пользовательские данные по исследованиям.
+  if (process.env.DB_RESET === 'true') {
+    await pool.query('DROP TABLE IF EXISTS research_states');
+    await pool.query('DROP TABLE IF EXISTS research_items');
+  }
+
+/////////////////
   // Основная таблица с пунктами (как и раньше)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS items (
@@ -41,6 +49,7 @@ async function initDb() {
       max_level INTEGER NOT NULL DEFAULT 10 CHECK (max_level >= 1),
       power_per_level INTEGER NOT NULL CHECK (power_per_level >= 0),
       time_minutes INTEGER NOT NULL CHECK (time_minutes > 0),
+      group_name TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -59,11 +68,17 @@ async function initDb() {
     )
   `);
 
+  // Добавляем колонку группы, если её ещё нет (на случай старых БД)
+  await pool.query(`
+    ALTER TABLE research_items
+    ADD COLUMN IF NOT EXISTS group_name TEXT
+  `);
+
   // Автозаполнение research_items из JS-справочника, если таблица пуста
-  await seedResearchItemsFromConfigIfEmpty();
+  await seedResearchItemsIfEmpty();
 }
 
-async function seedResearchItemsFromConfigIfEmpty() {
+async function seedResearchItemsIfEmpty() {
   try {
     const countRes = await pool.query('SELECT COUNT(*)::int AS cnt FROM research_items');
     const count = countRes.rows[0]?.cnt || 0;
@@ -72,45 +87,56 @@ async function seedResearchItemsFromConfigIfEmpty() {
     }
 
     if (!Array.isArray(RESEARCH_ITEMS) || RESEARCH_ITEMS.length === 0) {
-      console.warn('RESEARCH_ITEMS пуст — заполните data/researchItems.js');
+      console.warn('RESEARCH_ITEMS пуст — research_items не будет заполнен');
+      return;
+    }
+
+    const items = RESEARCH_ITEMS.map((item, idx) => ({
+      code: item.code || `R_${idx + 1}`,
+      name: item.name,
+      maxLevel: Number.isFinite(item.maxLevel) ? item.maxLevel : 1,
+      powerPerLevel: Number.isFinite(item.powerPerLevel) ? item.powerPerLevel : 0,
+      timeMinutes: Number.isFinite(item.timeMinutes) ? item.timeMinutes : 1,
+      groupName: item.groupName || null
+    })).filter(
+      (i) => i && i.name && i.maxLevel > 0 && i.timeMinutes > 0 && i.powerPerLevel >= 0
+    );
+
+    if (!items.length) {
+      console.warn('RESEARCH_ITEMS не содержит валидных записей для импорта');
       return;
     }
 
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      for (const item of RESEARCH_ITEMS) {
-        if (!item || !item.name) continue;
-        const code = item.code || null;
-        const maxLevel = Number.isFinite(item.maxLevel) ? item.maxLevel : 1;
-        const powerPerLevel = Number.isFinite(item.powerPerLevel)
-          ? item.powerPerLevel
-          : 0;
-        const timeMinutes = Number.isFinite(item.timeMinutes) ? item.timeMinutes : 1;
-
-        if (maxLevel <= 0 || timeMinutes <= 0 || powerPerLevel < 0) continue;
-
+      for (const item of items) {
         await client.query(
           `
-          INSERT INTO research_items (code, name, max_level, power_per_level, time_minutes)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO research_items (code, name, max_level, power_per_level, time_minutes, group_name)
+          VALUES ($1, $2, $3, $4, $5, $6)
           ON CONFLICT (code) DO NOTHING
         `,
-          [code, item.name, maxLevel, powerPerLevel, timeMinutes]
+          [
+            item.code || null,
+            item.name,
+            item.maxLevel,
+            item.powerPerLevel,
+            item.timeMinutes,
+            item.groupName
+          ]
         );
       }
       await client.query('COMMIT');
-      console.log(
-        'Импортировано записей в research_items из RESEARCH_ITEMS (новых по code)'
-      );
+      console.log('Импортировано записей в research_items из RESEARCH_ITEMS');
     } catch (err) {
       await client.query('ROLLBACK');
-      console.error('Ошибка при импорте research_items из RESEARCH_ITEMS:', err);
+      console.error('Ошибка при импорте research_items:', err);
     } finally {
       client.release();
     }
   } catch (err) {
-    console.error('Общая ошибка автоимпорта research_items из RESEARCH_ITEMS:', err);
+    console.error('Общая ошибка автоимпорта research_items:', err);
   }
 }
 

@@ -124,6 +124,7 @@ function renderResearchItems() {
       const state = researchState.userState[item.id] || {};
       const currentLevel = state.currentLevel || 0;
       const blocked = !!state.blocked;
+      const groupName = item.group_name || '';
       const effectivePower =
         state.powerPerLevel != null ? state.powerPerLevel : item.power_per_level;
       const timeMinutes =
@@ -137,7 +138,7 @@ function renderResearchItems() {
         <div class="item-row research-row ${blocked ? 'blocked' : ''}" data-id="${item.id}">
           <div class="item-name">
             <div class="item-name-main">${item.name}</div>
-            ${item.code ? `<div class="item-name-sub">[${item.code}]</div>` : ''}
+            ${groupName ? `<div class="item-name-sub">${groupName}</div>` : ''}
           </div>
           <div class="research-cell">
             <label>Тек. ур.</label>
