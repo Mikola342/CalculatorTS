@@ -119,66 +119,79 @@ function renderResearchItems() {
     return;
   }
 
-  const rows = researchState.items
-    .map((item) => {
-      const state = researchState.userState[item.id] || {};
-      const currentLevel = state.currentLevel || 0;
-      const blocked = !!state.blocked;
-      const groupName = item.group_name || '';
-      const effectivePower =
-        state.powerPerLevel != null ? state.powerPerLevel : item.power_per_level;
-      const timeMinutes =
-        state.timeMinutes != null ? state.timeMinutes : item.time_minutes || 60;
-      const days = Math.floor(timeMinutes / (24 * 60));
-      const remAfterDays = timeMinutes % (24 * 60);
-      const hours = Math.floor(remAfterDays / 60);
-      const minutes = remAfterDays % 60;
+  const groups = new Map();
+  for (const item of researchState.items) {
+    const groupName = item.group_name || 'Другое';
+    if (!groups.has(groupName)) {
+      groups.set(groupName, []);
+    }
+    groups.get(groupName).push(item);
+  }
 
-      return `
-        <div class="item-row research-row ${blocked ? 'blocked' : ''}" data-id="${item.id}">
-          <div class="item-name">
-            <div class="item-name-main">${item.name}</div>
-            ${groupName ? `<div class="item-name-sub">${groupName}</div>` : ''}
-          </div>
-          <div class="research-cell">
-            <label>Тек. ур.</label>
-            <input type="number"
-              class="research-input level-input"
-              min="0"
-              max="${item.max_level}"
-              value="${currentLevel}"
-            />
-            <span class="research-hint">из ${item.max_level}</span>
-          </div>
-          <div class="research-cell">
-            <label>Сила / уровень</label>
-            <input type="number"
-              class="research-input power-input"
-              min="0"
-              value="${effectivePower}"
-            />
-          </div>
-          <div class="research-cell time-cell">
-            <label>Время / уровень</label>
-            <div class="time-inputs">
-              <input type="number" class="research-input time-day" min="0" value="${days}" />
-              <span class="time-label">д</span>
-              <input type="number" class="research-input time-hour" min="0" max="23" value="${hours}" />
-              <span class="time-label">ч</span>
-              <input type="number" class="research-input time-minute" min="0" max="59" value="${minutes}" />
-              <span class="time-label">м</span>
+  let html = '';
+
+  for (const [groupName, items] of groups.entries()) {
+    html += `<div class="research-group-header">${groupName}</div>`;
+
+    html += items
+      .map((item) => {
+        const state = researchState.userState[item.id] || {};
+        const currentLevel = state.currentLevel || 0;
+        const blocked = !!state.blocked;
+        const effectivePower =
+          state.powerPerLevel != null ? state.powerPerLevel : item.power_per_level;
+        const timeMinutes =
+          state.timeMinutes != null ? state.timeMinutes : item.time_minutes || 60;
+        const days = Math.floor(timeMinutes / (24 * 60));
+        const remAfterDays = timeMinutes % (24 * 60);
+        const hours = Math.floor(remAfterDays / 60);
+        const minutes = remAfterDays % 60;
+
+        return `
+          <div class="item-row research-row ${blocked ? 'blocked' : ''}" data-id="${item.id}">
+            <div class="item-name">
+              <div class="item-name-main">${item.name}</div>
+            </div>
+            <div class="research-cell">
+              <label>Тек. ур.</label>
+              <input type="number"
+                class="research-input level-input"
+                min="0"
+                max="${item.max_level}"
+                value="${currentLevel}"
+              />
+              <span class="research-hint">из ${item.max_level}</span>
+            </div>
+            <div class="research-cell">
+              <label>Сила / уровень</label>
+              <input type="number"
+                class="research-input power-input"
+                min="0"
+                value="${effectivePower}"
+              />
+            </div>
+            <div class="research-cell time-cell">
+              <label>Время / уровень</label>
+              <div class="time-inputs">
+                <input type="number" class="research-input time-day" min="0" value="${days}" />
+                <span class="time-label">д</span>
+                <input type="number" class="research-input time-hour" min="0" max="23" value="${hours}" />
+                <span class="time-label">ч</span>
+                <input type="number" class="research-input time-minute" min="0" max="59" value="${minutes}" />
+                <span class="time-label">м</span>
+              </div>
+            </div>
+            <div class="research-cell block-cell">
+              <label>Блок</label>
+              <input type="checkbox" class="block-checkbox" ${blocked ? 'checked' : ''} />
             </div>
           </div>
-          <div class="research-cell block-cell">
-            <label>Блок</label>
-            <input type="checkbox" class="block-checkbox" ${blocked ? 'checked' : ''} />
-          </div>
-        </div>
-      `;
-    })
-    .join('');
+        `;
+      })
+      .join('');
+  }
 
-  list.innerHTML = rows;
+  list.innerHTML = html;
 }
 
 function collectCurrentResearchConfig() {
@@ -241,22 +254,20 @@ function calculateBestPlan() {
 
   for (const item of config) {
     if (item.blocked) continue;
-    const availableLevels = Math.max(0, item.maxLevel - item.currentLevel);
-    if (availableLevels <= 0) continue;
+    // Прокачка считается только на +1 уровень, а не до максимального
+    if (item.currentLevel >= item.maxLevel) continue;
 
     const ratio =
       item.timeMinutes > 0 ? item.powerPerLevel / item.timeMinutes : 0;
 
-    for (let i = 0; i < availableLevels; i++) {
-      upgrades.push({
-        researchId: item.id,
-        name: item.name,
-        stepIndex: i + 1,
-        powerGain: item.powerPerLevel,
-        timeCost: item.timeMinutes,
-        ratio
-      });
-    }
+    upgrades.push({
+      researchId: item.id,
+      name: item.name,
+      stepIndex: 1,
+      powerGain: item.powerPerLevel,
+      timeCost: item.timeMinutes,
+      ratio
+    });
   }
 
   if (!upgrades.length) {
@@ -346,12 +357,6 @@ function renderPlanResult(result) {
 }
 
 async function saveResearchState() {
-  if (!researchState.user) {
-    showResearchToast('Войдите в аккаунт, чтобы сохранять уровни', 'error');
-    openUserModal();
-    return;
-  }
-
   const config = collectCurrentResearchConfig();
   if (!config.length) {
     showResearchToast('Нет данных для сохранения', 'error');
@@ -375,7 +380,12 @@ async function saveResearchState() {
     });
     showResearchToast('Состояние исследований сохранено', 'success');
   } catch (err) {
-    showResearchToast(err.message, 'error');
+    if (err.message.includes('Требуется авторизация пользователя')) {
+      showResearchToast('Войдите в аккаунт, чтобы сохранять уровни', 'error');
+      openUserModal();
+    } else {
+      showResearchToast(err.message, 'error');
+    }
   }
 }
 

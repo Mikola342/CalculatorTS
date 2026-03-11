@@ -9,16 +9,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isReplitDb ? false : isProduction ? { rejectUnauthorized: false } : false
 });
-/////////////////
-async function initDb() {
-  // Опциональное пересоздание таблиц исследований (например, после изменения схемы)
-  // ВНИМАНИЕ: это удалит все пользовательские данные по исследованиям.
-  if (process.env.DB_RESET === 'true') {
-    await pool.query('DROP TABLE IF EXISTS research_states');
-    await pool.query('DROP TABLE IF EXISTS research_items');
-  }
 
-/////////////////
   // Основная таблица с пунктами (как и раньше)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS items (
