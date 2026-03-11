@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Оптимизация исследований</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="bg-animated">
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚔️</div>
+        <div class="logo-text">
+          <span class="logo-title">VS CALCULATOR</span>
+          <span class="logo-sub">Исследования</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <nav class="top-nav">
+          <a href="/" class="nav-link">Очки VS</a>
+          <a href="/research.html" class="nav-link active">Исследования</a>
+        </nav>
+        <div class="user-auth" id="userAuth">
+          <span id="userLabel" class="user-label">Гость</span>
+          <button class="auth-btn" id="userAuthBtn">Войти</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="content-grid research-grid">
+      <div class="calculator-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Пункты исследований</h2>
+          <button class="reset-btn" id="resetResearchBtn" title="Сбросить уровни">
+            ↺ Сброс уровней
+          </button>
+        </div>
+
+        <div class="research-controls">
+          <div class="control-group">
+            <label for="availableMinutes">Доступное время (минуты):</label>
+            <input type="number" id="availableMinutes" min="1" placeholder="Например, 1440" />
+          </div>
+          <button class="primary-btn" id="calculatePlanBtn">Рассчитать оптимальную прокачку</button>
+          <button class="secondary-btn" id="saveStateBtn">💾 Сохранить мои уровни</button>
+        </div>
+
+        <div class="items-list research-list" id="researchList">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Загрузка пунктов исследований...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="result-card">
+          <div class="result-label">ИТОГО ПРИБАВКА СИЛЫ</div>
+          <div class="result-value" id="totalPowerGain">0</div>
+          <div class="result-formatted" id="totalPowerFormatted"></div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-label">ИСПОЛЬЗОВАННО ВРЕМЕНИ</div>
+          <div class="result-value" id="usedTime">0 мин</div>
+          <div class="result-formatted" id="remainingTime"></div>
+        </div>
+
+        <div class="breakdown-section">
+          <h3 class="breakdown-title">План прокачки</h3>
+          <div class="breakdown-list" id="planList">
+            <p class="no-items">Укажите уровни и время, затем нажмите «Рассчитать»</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="userLoginOverlay">
+      <div class="modal">
+        <button class="modal-close" id="userModalClose">✕</button>
+        <div class="modal-icon">🧬</div>
+        <h2 class="modal-title">Вход / регистрация</h2>
+        <p class="modal-sub">Создайте простой аккаунт, чтобы сохранять свои уровни исследований</p>
+
+        <form class="login-form" id="userLoginForm">
+          <div class="input-wrap">
+            <input type="text" id="usernameInput" placeholder="Логин" autocomplete="username" required />
+          </div>
+          <div class="input-wrap">
+            <input type="password" id="userPasswordInput" placeholder="Пароль" autocomplete="current-password" required />
+          </div>
+          <div class="auth-switch">
+            <label>
+              <input type="checkbox" id="isRegisterCheckbox" />
+              <span>Я новый пользователь (регистрация)</span>
+            </label>
+          </div>
+          <p class="login-error" id="userLoginError"></p>
+          <button type="submit" class="login-btn">Продолжить</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="researchToast"></div>
+  </main>
+
+  <script src="research.js"></script>
+</body>
+</html>
+

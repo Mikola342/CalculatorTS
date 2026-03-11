@@ -24,9 +24,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const itemsRouter = require('./routes/items');
 const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
+const researchRouter = require('./routes/research');
 
 app.use('/api/items', itemsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/research', researchRouter);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
