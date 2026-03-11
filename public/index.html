@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор Очков VS</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="bg-animated">
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚔️</div>
+        <div class="logo-text">
+          <span class="logo-title">VS CALCULATOR</span>
+          <span class="logo-sub">Калькулятор Очков</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="db-status" id="dbStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Загрузка...</span>
+        </div>
+        <button class="auth-btn" id="authBtn">🔑 Войти</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="days-nav">
+      <button class="day-btn active" data-day="Понедельник">
+        <span class="day-icon">🌙</span>
+        <span>ПН</span>
+      </button>
+      <button class="day-btn" data-day="Вторник">
+        <span class="day-icon">🏗️</span>
+        <span>ВТ</span>
+      </button>
+      <button class="day-btn" data-day="Среда">
+        <span class="day-icon">🔬</span>
+        <span>СР</span>
+      </button>
+      <button class="day-btn" data-day="Четверг">
+        <span class="day-icon">🦸</span>
+        <span>ЧТ</span>
+      </button>
+      <button class="day-btn" data-day="Пятница">
+        <span class="day-icon">⚔️</span>
+        <span>ПТ</span>
+      </button>
+    </div>
+
+    <div class="content-grid">
+      <div class="calculator-panel">
+        <div class="panel-header">
+          <h2 class="panel-title" id="currentDayTitle">Понедельник</h2>
+          <button class="reset-btn" id="resetBtn" title="Сбросить всё">↺ Сброс</button>
+        </div>
+        <div class="items-list" id="itemsList">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Загрузка данных...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="result-card">
+          <div class="result-label">ИТОГО ОЧКОВ</div>
+          <div class="result-value" id="totalPoints">0</div>
+          <div class="result-formatted" id="totalFormatted">0</div>
+        </div>
+        <div class="breakdown-section">
+          <h3 class="breakdown-title">Разбивка</h3>
+          <div class="breakdown-list" id="breakdownList">
+            <p class="no-items">Введите количество для расчёта</p>
+          </div>
+        </div>
+        <button class="copy-btn" id="copyBtn">📋 Скопировать результат</button>
+      </div>
+    </div>
+
+    <div class="admin-panel" id="adminPanel" style="display:none">
+      <div class="admin-header" id="adminToggle">
+        <span>⚙️ Управление данными <span class="admin-badge">ADMIN</span></span>
+        <span class="admin-arrow">▼</span>
+      </div>
+      <div class="admin-body" id="adminBody" style="display:none">
+        <form class="add-form" id="addForm">
+          <h4>Добавить новый пункт</h4>
+          <div class="form-row">
+            <input type="text" id="newName" placeholder="Название действия" required />
+          </div>
+          <div class="form-row two-col">
+            <input type="number" id="newPrice" placeholder="Цена (очки)" min="1" required />
+            <select id="newDay">
+              <option value="Понедельник">Понедельник</option>
+              <option value="Вторник">Вторник</option>
+              <option value="Среда">Среда</option>
+              <option value="Четверг">Четверг</option>
+              <option value="Пятница">Пятница</option>
+            </select>
+          </div>
+          <button type="submit" class="add-btn">+ Добавить</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="loginOverlay">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-icon">🔐</div>
+      <h2 class="modal-title">Вход для администратора</h2>
+      <p class="modal-sub">Введите пароль для доступа к редактированию</p>
+      <form class="login-form" id="loginForm">
+        <div class="input-wrap">
+          <input type="password" id="passwordInput" placeholder="Пароль администратора" autocomplete="current-password" required />
+          <button type="button" class="eye-btn" id="eyeBtn">👁</button>
+        </div>
+        <p class="login-error" id="loginError"></p>
+        <button type="submit" class="login-btn">Войти</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
