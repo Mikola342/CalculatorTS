@@ -278,6 +278,13 @@ document.querySelectorAll('.day-btn').forEach(btn => {
     btn.classList.add('active');
     state.currentDay = btn.dataset.day;
     document.getElementById('currentDayTitle').textContent = state.currentDay;
+    // При смене дня автоматически обновляем фильтр бонусов
+    state.bonusDayFilter = state.currentDay;
+    const bonusDaySelect = document.getElementById('bonusDayFilter');
+    if (bonusDaySelect) {
+      bonusDaySelect.value = state.bonusDayFilter;
+    }
+    renderBonuses();
     state.quantities = {};
     updateResult();
     await loadItems(state.currentDay);
