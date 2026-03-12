@@ -226,6 +226,82 @@ body {
 .items-list::-webkit-scrollbar { width: 4px; }
 .items-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
+.bonus-panel {
+  padding: 10px 16px 4px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.bonus-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bonus-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.bonus-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.bonus-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bonus-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.9);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.bonus-name {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bonus-input {
+  width: 60px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bonus-input:focus {
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 8px var(--accent-sec-glow);
+}
+
+.bonus-input-suffix {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .item-row {
   display: grid;
   grid-template-columns: 1fr auto auto;

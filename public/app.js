@@ -3,7 +3,9 @@ const state = {
   items: [],
   quantities: {},
   isAdmin: false,
-  isDbConnected: false
+  isDbConnected: false,
+  bonuses: [],
+  bonusPercents: {}
 };
 
 const dayIcons = {
@@ -18,6 +20,27 @@ async function fetchItems(day) {
   const res = await fetch(`/api/items?day=${encodeURIComponent(day)}`);
   if (!res.ok) throw new Error('Ошибка сервера');
   return res.json();
+}
+
+async function fetchBonuses() {
+  const res = await fetch('/api/bonuses');
+  if (!res.ok) throw new Error('Ошибка сервера бонусов');
+  return res.json();
+}
+
+function isPurchaseItem(item) {
+  const name = (item.name || '').toLowerCase();
+  return name.includes('покупая наборы');
+}
+
+function getTotalBonusMultiplier() {
+  let totalPercent = 0;
+  for (const id in state.bonusPercents) {
+    if (Object.prototype.hasOwnProperty.call(state.bonusPercents, id)) {
+      totalPercent += state.bonusPercents[id] || 0;
+    }
+  }
+  return 1 + totalPercent / 100;
 }
 
 async function checkAuthStatus() {
@@ -86,10 +109,14 @@ function renderItems() {
   list.innerHTML = state.items.map(item => {
     const id = getItemId(item);
     const hasVal = (state.quantities[id] || 0) > 0;
+    const basePrice = item.price;
+    const effectivePrice = isPurchaseItem(item)
+      ? basePrice
+      : Math.round(basePrice * getTotalBonusMultiplier());
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
         <div class="item-name">${escapeHtml(item.name)}</div>
-        <div class="item-price">${formatNumber(item.price)}</div>
+        <div class="item-price">${formatNumber(effectivePrice)}</div>
         <input
           type="number"
           class="qty-input"
@@ -128,9 +155,13 @@ function updateResult() {
     const id = getItemId(item);
     const qty = state.quantities[id] || 0;
     if (qty > 0) {
-      const score = qty * item.price;
+      const basePrice = item.price;
+      const effectivePrice = isPurchaseItem(item)
+        ? basePrice
+        : Math.round(basePrice * getTotalBonusMultiplier());
+      const score = qty * effectivePrice;
       total += score;
-      breakdown.push({ name: item.name, qty, price: item.price, score });
+      breakdown.push({ name: item.name, qty, price: effectivePrice, score });
     }
   });
 
@@ -156,6 +187,47 @@ function updateResult() {
       </div>
     `).join('');
   }
+}
+
+function renderBonuses() {
+  const container = document.getElementById('bonusList');
+  if (!container) return;
+
+  if (!state.bonuses.length) {
+    container.innerHTML = '<p class="no-items">Добавьте бонусы в базе данных</p>';
+    return;
+  }
+
+  container.innerHTML = state.bonuses
+    .map(bonus => {
+      const value = state.bonusPercents[bonus.id] ?? '';
+      return `
+        <div class="bonus-item">
+          <span class="bonus-name">${escapeHtml(bonus.name)}</span>
+          <input
+            type="number"
+            class="bonus-input"
+            data-id="${bonus.id}"
+            min="0"
+            max="500"
+            value="${value}"
+            placeholder="0"
+          />
+          <span class="bonus-input-suffix">%</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.querySelectorAll('.bonus-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const id = input.dataset.id;
+      const val = parseFloat(input.value.replace(',', '.')) || 0;
+      state.bonusPercents[id] = val;
+      renderItems();
+      updateResult();
+    });
+  });
 }
 
 function animateNumber(el, from, to, duration) {
@@ -343,6 +415,12 @@ function createParticles() {
 async function init() {
   createParticles();
   await Promise.all([checkAuthStatus(), checkDbStatus()]);
+  try {
+    state.bonuses = await fetchBonuses();
+  } catch {
+    state.bonuses = [];
+  }
+  renderBonuses();
   await loadItems(state.currentDay);
 }
 

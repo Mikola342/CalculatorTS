@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { FALLBACK_ITEMS } = require('./data/fallback');
 const { RESEARCH_ITEMS } = require('./data/researchItems');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -18,6 +19,12 @@ async function initDb() {
     await pool.query('DROP TABLE IF EXISTS research_items');
   }
 
+  // Опциональное пересоздание таблицы items (основная страница) и заполнение из fallback.js
+  // ВНИМАНИЕ: это удалит все данные items в БД.
+  if (process.env.DB_RESET_ITEMS === 'true') {
+    await pool.query('DROP TABLE IF EXISTS items');
+  }
+
   // Основная таблица с пунктами (как и раньше)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS items (
@@ -25,6 +32,15 @@ async function initDb() {
       name TEXT NOT NULL,
       price INTEGER NOT NULL CHECK (price >= 0),
       day TEXT NOT NULL CHECK (day IN ('Понедельник','Вторник','Среда','Четверг','Пятница')),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  // Типы бонусов очков (названия), проценты вводятся пользователем на клиенте
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS point_bonus_types (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -85,6 +101,9 @@ async function initDb() {
 
   // Автозаполнение research_items из JS-справочника, если таблица пуста
   await seedResearchItemsIfEmpty();
+
+  // Автозаполнение items из FALLBACK_ITEMS, если таблица пуста
+  await seedItemsFromFallbackIfEmpty();
 }
 
 async function seedResearchItemsIfEmpty() {
@@ -146,6 +165,51 @@ async function seedResearchItemsIfEmpty() {
     }
   } catch (err) {
     console.error('Общая ошибка автоимпорта research_items:', err);
+  }
+}
+
+async function seedItemsFromFallbackIfEmpty() {
+  try {
+    const countRes = await pool.query('SELECT COUNT(*)::int AS cnt FROM items');
+    const count = countRes.rows[0]?.cnt || 0;
+    if (count > 0) return;
+
+    if (!Array.isArray(FALLBACK_ITEMS) || FALLBACK_ITEMS.length === 0) {
+      console.warn('FALLBACK_ITEMS пуст — items не будет заполнен');
+      return;
+    }
+
+    const items = FALLBACK_ITEMS.filter(
+      (i) => i && i.name && Number.isFinite(i.price) && i.price >= 0 && i.day
+    );
+
+    if (!items.length) {
+      console.warn('FALLBACK_ITEMS не содержит валидных записей для импорта');
+      return;
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const item of items) {
+        await client.query(
+          `
+          INSERT INTO items (name, price, day)
+          VALUES ($1, $2, $3)
+        `,
+          [item.name, parseInt(item.price, 10), item.day]
+        );
+      }
+      await client.query('COMMIT');
+      console.log('Импортировано записей в items из FALLBACK_ITEMS');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Ошибка при импорте items из FALLBACK_ITEMS:', err);
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Общая ошибка автоимпорта items:', err);
   }
 }
 
