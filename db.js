@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const { FALLBACK_ITEMS } = require('./data/fallback');
 const { RESEARCH_ITEMS } = require('./data/researchItems');
+const { POINT_BONUS_TYPES } = require('./data/bonusFallback');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isReplitDb =
@@ -14,15 +15,13 @@ const pool = new Pool({
 async function initDb() {
   // Опциональное пересоздание таблиц исследований (например, после изменения схемы)
   // ВНИМАНИЕ: это удалит все пользовательские данные по исследованиям.
+  // Опциональное пересоздание таблицы items (основная страница) и заполнение из fallback.js
+  // ВНИМАНИЕ: это удалит все данные items в БД
   if (process.env.DB_RESET === 'true') {
     await pool.query('DROP TABLE IF EXISTS research_states');
     await pool.query('DROP TABLE IF EXISTS research_items');
-  }
-
-  // Опциональное пересоздание таблицы items (основная страница) и заполнение из fallback.js
-  // ВНИМАНИЕ: это удалит все данные items в БД.
-  if (process.env.DB_RESET_ITEMS === 'true') {
     await pool.query('DROP TABLE IF EXISTS items');
+
   }
 
   // Основная таблица с пунктами (как и раньше)
@@ -41,6 +40,7 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS point_bonus_types (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
+      day TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -93,6 +93,12 @@ async function initDb() {
     ADD COLUMN IF NOT EXISTS time_minutes_override INTEGER
   `);
 
+  // На старых БД в таблице point_bonus_types могло не быть day
+  await pool.query(`
+    ALTER TABLE point_bonus_types
+    ADD COLUMN IF NOT EXISTS day TEXT
+  `);
+
   // Добавляем колонку группы, если её ещё нет (на случай старых БД)
   await pool.query(`
     ALTER TABLE research_items
@@ -104,6 +110,9 @@ async function initDb() {
 
   // Автозаполнение items из FALLBACK_ITEMS, если таблица пуста
   await seedItemsFromFallbackIfEmpty();
+
+  // Автозаполнение point_bonus_types из POINT_BONUS_TYPES, если таблица пуста
+  await seedBonusTypesIfEmpty();
 }
 
 async function seedResearchItemsIfEmpty() {
@@ -210,6 +219,50 @@ async function seedItemsFromFallbackIfEmpty() {
     }
   } catch (err) {
     console.error('Общая ошибка автоимпорта items:', err);
+  }
+}
+
+async function seedBonusTypesIfEmpty() {
+  try {
+    const countRes = await pool.query(
+      'SELECT COUNT(*)::int AS cnt FROM point_bonus_types'
+    );
+    const count = countRes.rows[0]?.cnt || 0;
+    if (count > 0) return;
+
+    if (!Array.isArray(POINT_BONUS_TYPES) || POINT_BONUS_TYPES.length === 0) {
+      console.warn('POINT_BONUS_TYPES пуст — point_bonus_types не будет заполнен');
+      return;
+    }
+
+    const rows = POINT_BONUS_TYPES.filter((b) => b && b.name);
+    if (!rows.length) {
+      console.warn('POINT_BONUS_TYPES не содержит валидных записей для импорта');
+      return;
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const bonus of rows) {
+        await client.query(
+          `
+          INSERT INTO point_bonus_types (name, day)
+          VALUES ($1, $2)
+        `,
+          [bonus.name, bonus.day || null]
+        );
+      }
+      await client.query('COMMIT');
+      console.log('Импортировано записей в point_bonus_types из POINT_BONUS_TYPES');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Ошибка при импорте point_bonus_types из POINT_BONUS_TYPES:', err);
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Общая ошибка автоимпорта point_bonus_types:', err);
   }
 }
 

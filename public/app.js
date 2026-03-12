@@ -5,7 +5,8 @@ const state = {
   isAdmin: false,
   isDbConnected: false,
   bonuses: [],
-  bonusPercents: {}
+  bonusPercents: {},
+  bonusDayFilter: 'Все дни'
 };
 
 const dayIcons = {
@@ -33,12 +34,21 @@ function isPurchaseItem(item) {
   return name.includes('покупая наборы');
 }
 
+function getActiveBonuses() {
+  const filter = state.bonusDayFilter;
+  return state.bonuses.filter((b) => {
+    const day = b.day || 'Все дни';
+    if (filter === 'Все дни') return true;
+    if (day === 'Все дни') return true;
+    return day === filter;
+  });
+}
+
 function getTotalBonusMultiplier() {
   let totalPercent = 0;
-  for (const id in state.bonusPercents) {
-    if (Object.prototype.hasOwnProperty.call(state.bonusPercents, id)) {
-      totalPercent += state.bonusPercents[id] || 0;
-    }
+  for (const bonus of getActiveBonuses()) {
+    const v = state.bonusPercents[bonus.id] || 0;
+    totalPercent += v;
   }
   return 1 + totalPercent / 100;
 }
@@ -193,12 +203,19 @@ function renderBonuses() {
   const container = document.getElementById('bonusList');
   if (!container) return;
 
+  const activeBonuses = getActiveBonuses();
+
   if (!state.bonuses.length) {
     container.innerHTML = '<p class="no-items">Добавьте бонусы в базе данных</p>';
     return;
   }
 
-  container.innerHTML = state.bonuses
+  if (!activeBonuses.length) {
+    container.innerHTML = '<p class="no-items">Нет бонусов для выбранного дня</p>';
+    return;
+  }
+
+  container.innerHTML = activeBonuses
     .map(bonus => {
       const value = state.bonusPercents[bonus.id] ?? '';
       return `
@@ -421,6 +438,16 @@ async function init() {
     state.bonuses = [];
   }
   renderBonuses();
+  const bonusDaySelect = document.getElementById('bonusDayFilter');
+  if (bonusDaySelect) {
+    bonusDaySelect.value = state.bonusDayFilter;
+    bonusDaySelect.addEventListener('change', () => {
+      state.bonusDayFilter = bonusDaySelect.value;
+      renderBonuses();
+      renderItems();
+      updateResult();
+    });
+  }
   await loadItems(state.currentDay);
 }
 
