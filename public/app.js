@@ -52,17 +52,32 @@ function getActiveBonuses() {
 
 function getTotalBonusMultiplier(item) {
   let totalPercent = 0;
-  console.log('item = ' + item);
+  
   for (const bonus of getActiveBonuses()) {
     const v = state.bonusPercents[bonus.id] || 0;
-    if (bonus.day === 'Все дни') {
-      totalPercent += v;
+    if (v === 0) continue;
+
+    // Флаг, применять ли этот бонус к текущему предмету
+    let shouldApply = false;
+
+    // 1. Проверка привязки к предмету
+    if (!bonus.targetItemName) {
+      // Если targetItemName нет (null/undefined/пустая строка), 
+      // бонус применяется ко ВСЕМ предметам этого дня
+      shouldApply = true;
+    } else {
+      // Если targetItemName указан, проверяем точное совпадение
+      // (Здесь сработает исправление опечатки)
+      if (bonus.targetItemName === item.name) {
+        shouldApply = true;
+      }
     }
 
-    if (bonus.targetItemName != null && bonus.targetItemName === item.name) {
+    if (shouldApply) {
       totalPercent += v;
     }
   }
+  
   return 1 + totalPercent / 100;
 }
 
