@@ -40,15 +40,12 @@ function getActiveBonuses() {
   });
 }
 
-// Возвращает общий множитель очков от всех активных бонусов
-/*function getTotalBonusMultiplier() {
-  let totalPercent = 0;
-  for (const bonus of getActiveBonuses()) {
-    const v = state.bonusPercents[bonus.id] || 0;
-    totalPercent += v;
+function splitTargetItemName(targetItemName) {
+  if (targetItemName.includes('|')) {
+    return targetItemName.split('|').map(part => part.trim());
   }
-  return 1 + totalPercent / 100;
-}*/
+  return [targetItemName.trim()];
+}
 
 function getTotalBonusMultiplier(item) {
   let totalPercent = 0;
@@ -63,9 +60,7 @@ function getTotalBonusMultiplier(item) {
     if (!bonus.targetitemname) {
       totalPercent += v;
     } else {
-      const parts = bonus.targetitemname.includes('|')
-        ? bonus.targetitemname.split('|').map(part => part.trim())
-        : [bonus.targetitemname.trim()];
+      const parts = splitTargetItemName(bonus.targetitemname);
 
       parts.forEach(part => {
         if (part == item.name) {
