@@ -1,4 +1,3 @@
-// Глобальное состояние калькулятора VS (текущий день, пункты, бонусы и т.п.)
 const state = {
   currentDay: 'Понедельник',
   items: [],
@@ -6,8 +5,7 @@ const state = {
   isAdmin: false,
   isDbConnected: false,
   bonuses: [],
-  bonusPercents: {},
-  bonusDayFilter: 'Все дни'
+  bonusPercents: {}
 };
 
 const dayIcons = {
@@ -18,71 +16,63 @@ const dayIcons = {
   'Пятница': '⚔️'
 };
 
-// Загружает пункты VS для указанного дня с сервера
 async function fetchItems(day) {
   const res = await fetch(`/api/items?day=${encodeURIComponent(day)}`);
   if (!res.ok) throw new Error('Ошибка сервера');
   return res.json();
 }
 
-// Загружает список типов бонусов очков
-async function fetchBonuses(day) {
-  const res = await fetch(`/api/bonuses?day=${encodeURIComponent(day)}`);
+async function fetchBonuses() {
+  const res = await fetch('/api/bonuses');
   if (!res.ok) throw new Error('Ошибка сервера бонусов');
   return res.json();
 }
 
-// Определяет, относится ли пункт к покупкам (на них бонусы не действуют)
 function isPurchaseItem(item) {
   const name = (item.name || '').toLowerCase();
   return name.includes('покупая наборы');
 }
 
-// Возвращает бонусы, которые действуют для текущего выбранного дня
 function getActiveBonuses() {
-  const filter = state.bonusDayFilter;
   return state.bonuses.filter((b) => {
     const day = b.day || 'Все дни';
-    if (filter === 'Все дни') return true;
-    if (day === 'Все дни') return true;
-    return day === filter;
+    return day === 'Все дни' || day === state.currentDay;
   });
 }
 
-// Считает общий множитель очков от всех активных бонусов
-function getTotalBonusMultiplier() {
+function getEffectivePrice(item) {
+  const divisor = item.qty_divisor || 1;
+  const basePerUnit = item.price / divisor;
+  if (isPurchaseItem(item)) return basePerUnit;
   let totalPercent = 0;
   for (const bonus of getActiveBonuses()) {
-    const v = state.bonusPercents[bonus.id] || 0;
-    totalPercent += v;
+    const pct = state.bonusPercents[bonus.id] || 0;
+    if (!pct) continue;
+    if (!bonus.target_item_name) {
+      totalPercent += pct;
+    } else if (bonus.target_item_name === item.name) {
+      totalPercent += pct;
+    }
   }
-  return 1 + totalPercent / 100;
+  return basePerUnit * (1 + totalPercent / 100);
 }
 
-// Проверяет, залогинен ли администратор (для редактирования пунктов)
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/auth/status');
     const data = await res.json();
     state.isAdmin = data.isAdmin;
-    updateAuthUI();
   } catch {
     state.isAdmin = false;
   }
 }
 
-// Проверяет, используется ли PostgreSQL или резервные данные из fallback.js
-async function checkDbStatus() {
-  try {
-    const items = await fetchItems('Понедельник');
-    state.isDbConnected = items.length > 0 && typeof items[0].id === 'number';
-    const dot = document.querySelector('#dbStatus .status-dot');
-    const text = document.querySelector('#dbStatus .status-text');
-    dot.className = 'status-dot ' + (state.isDbConnected ? 'connected' : 'disconnected');
-    text.textContent = state.isDbConnected ? 'PostgreSQL подключена' : 'Локальные данные';
-  } catch {
-    document.querySelector('#dbStatus .status-text').textContent = 'Ошибка подключения';
-  }
+function updateDbStatusUI() {
+  const dot = document.querySelector('#dbStatus .status-dot');
+  const text = document.querySelector('#dbStatus .status-text');
+  if (!dot || !text) return;
+  dot.className = 'status-dot ' + (state.isDbConnected ? 'connected' : 'disconnected');
+  text.textContent = state.isDbConnected ? 'PostgreSQL подключена' : 'Ошибка подключения';
 }
 
 function updateAuthUI() {
@@ -113,10 +103,6 @@ async function loadItems(day) {
   }
 }
 
-function getItemId(item) {
-  return item.id !== undefined ? item.id : item._id;
-}
-
 function renderItems() {
   const list = document.getElementById('itemsList');
   if (!state.items.length) {
@@ -125,12 +111,9 @@ function renderItems() {
   }
 
   list.innerHTML = state.items.map(item => {
-    const id = getItemId(item);
+    const id = item.id;
     const hasVal = (state.quantities[id] || 0) > 0;
-    const basePrice = item.price;
-    const effectivePrice = isPurchaseItem(item)
-      ? basePrice
-      : Math.round(basePrice * getTotalBonusMultiplier());
+    const effectivePrice = getEffectivePrice(item);
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
         <div class="item-name">${escapeHtml(item.name)}</div>
@@ -158,7 +141,7 @@ function renderItems() {
 
 function handleQtyChange(e) {
   const id = e.target.dataset.id;
-  const val = parseInt(e.target.value) || 0;
+  const val = parseInt(e.target.value, 10) || 0;
   if (val > 0) state.quantities[id] = val;
   else delete state.quantities[id];
   document.getElementById(`row-${id}`)?.classList.toggle('has-value', val > 0);
@@ -170,24 +153,30 @@ function updateResult() {
   const breakdown = [];
 
   state.items.forEach(item => {
-    const id = getItemId(item);
+    const id = item.id;
     const qty = state.quantities[id] || 0;
+    const price = state.price[id];
+    const effectivePrice = getEffectivePrice(item);
+
     if (qty > 0) {
-      const basePrice = item.price;
-      const effectivePrice = isPurchaseItem(item)
-        ? basePrice
-        : Math.round(basePrice * getTotalBonusMultiplier());
-      const score = qty * effectivePrice;
-      total += score;
-      breakdown.push({ name: item.name, qty, price: effectivePrice, score });
+      if (price == 1) {
+        const name = state.name[id];
+        const num = name.match(/\d+/);
+        const score = Math.round(qty * (effectivePrice / num));
+      } else {
+        const score = Math.round(qty * effectivePrice);
+      }
     }
+    total += score;
+    breakdown.push({ name: item.name, qty, price: effectivePrice, score });
+      
   });
 
   const totalEl = document.getElementById('totalPoints');
   const fmtEl = document.getElementById('totalFormatted');
   const breakdownEl = document.getElementById('breakdownList');
 
-  const prev = parseInt(totalEl.textContent.replace(/\s/g, '').replace(/\u00a0/g, '')) || 0;
+  const prev = parseInt(totalEl.textContent.replace(/\s/g, '').replace(/\u00a0/g, ''), 10) || 0;
   animateNumber(totalEl, prev, total, 300);
 
   fmtEl.textContent = total >= 1000000
@@ -286,12 +275,6 @@ document.querySelectorAll('.day-btn').forEach(btn => {
     btn.classList.add('active');
     state.currentDay = btn.dataset.day;
     document.getElementById('currentDayTitle').textContent = state.currentDay;
-    // При смене дня автоматически обновляем фильтр бонусов
-    state.bonusDayFilter = state.currentDay;
-    const bonusDaySelect = document.getElementById('bonusDayFilter');
-    if (bonusDaySelect) {
-      bonusDaySelect.value = state.bonusDayFilter;
-    }
     renderBonuses();
     state.quantities = {};
     updateResult();
@@ -318,7 +301,7 @@ document.getElementById('adminToggle').addEventListener('click', () => {
 document.getElementById('addForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('newName').value.trim();
-  const price = parseInt(document.getElementById('newPrice').value);
+  const price = parseInt(document.getElementById('newPrice').value, 10);
   const day = document.getElementById('newDay').value;
   if (!name || !price) return;
 
@@ -424,7 +407,10 @@ function showToast(msg, type = '') {
   setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 
-function formatNumber(n) { return n.toLocaleString('ru-RU'); }
+function formatNumber(n) {
+  if (Number.isInteger(n)) return n.toLocaleString('ru-RU');
+  return n.toLocaleString('ru-RU', { maximumFractionDigits: 4 });
+}
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -446,24 +432,25 @@ function createParticles() {
 
 async function init() {
   createParticles();
-  await Promise.all([checkAuthStatus(), checkDbStatus()]);
-  try {
-    state.bonuses = await fetchBonuses();
-  } catch {
-    state.bonuses = [];
+
+  const [authResult, itemsResult, bonusesResult] = await Promise.allSettled([
+    checkAuthStatus(),
+    fetchItems(state.currentDay),
+    fetchBonuses()
+  ]);
+
+  if (itemsResult.status === 'fulfilled') {
+    state.items = itemsResult.value;
+    state.isDbConnected = state.items.length > 0 && typeof state.items[0].id === 'number';
+  } else {
+    state.isDbConnected = false;
   }
+  updateDbStatusUI();
+  updateAuthUI();
+
+  state.bonuses = bonusesResult.status === 'fulfilled' ? bonusesResult.value : [];
   renderBonuses();
-  const bonusDaySelect = document.getElementById('bonusDayFilter');
-  if (bonusDaySelect) {
-    bonusDaySelect.value = state.bonusDayFilter;
-    bonusDaySelect.addEventListener('change', () => {
-      state.bonusDayFilter = bonusDaySelect.value;
-      renderBonuses();
-      renderItems();
-      updateResult();
-    });
-  }
-  await loadItems(state.currentDay);
+  renderItems();
 }
 
 init();

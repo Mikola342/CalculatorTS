@@ -98,10 +98,24 @@ async function initDb() {
     ADD COLUMN IF NOT EXISTS day TEXT
   `);
 
+  // Добавляем колонку target_item_name для привязки бонуса к конкретному пункту
+  await pool.query(`
+    ALTER TABLE point_bonus_types
+    ADD COLUMN IF NOT EXISTS target_item_name TEXT
+  `);
+
   // Добавляем колонку группы, если её ещё нет (на случай старых БД)
   await pool.query(`
     ALTER TABLE research_items
     ADD COLUMN IF NOT EXISTS group_name TEXT
+  `);
+
+  // Проставляем target_item_name для уже существующих бонусов с привязкой к пункту
+  await pool.query(`
+    UPDATE point_bonus_types
+    SET target_item_name = 'Завершить разведмиссии: 1'
+    WHERE name = 'Очки за завершение заданий на радаре'
+      AND target_item_name IS NULL
   `);
 
   // Автозаполнение research_items из JS-справочника, если таблица пуста
@@ -202,10 +216,10 @@ async function seedItemsFromFallbackIfEmpty() {
       for (const item of items) {
         await client.query(
           `
-          INSERT INTO items (name, price, day)
-          VALUES ($1, $2, $3)
+          INSERT INTO items (name, price, day, qty_divisor)
+          VALUES ($1, $2, $3, $4)
         `,
-          [item.name, parseInt(item.price, 10), item.day]
+          [item.name, parseInt(item.price, 10), item.day, item.qtyDivisor || 1]
         );
       }
       await client.query('COMMIT');
@@ -246,10 +260,10 @@ async function seedBonusTypesIfEmpty() {
       for (const bonus of rows) {
         await client.query(
           `
-          INSERT INTO point_bonus_types (name, day)
-          VALUES ($1, $2)
+          INSERT INTO point_bonus_types (name, day, target_item_name)
+          VALUES ($1, $2, $3)
         `,
-          [bonus.name, bonus.day || null]
+          [bonus.name, bonus.day || null, bonus.targetItemName || null]
         );
       }
       await client.query('COMMIT');

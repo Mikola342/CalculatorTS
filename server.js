@@ -17,7 +17,7 @@ if (isProduction) {
 app.use(cors());
 app.use(express.json());
 app.use(session({
-  secret: process.env.ADMIN_PASSWORD || 'fallback-secret-key',
+  secret: process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || 'fallback-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
