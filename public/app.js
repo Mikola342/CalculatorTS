@@ -40,23 +40,6 @@ function getActiveBonuses() {
   });
 }
 
-function getEffectivePrice(item) {
-  const divisor = item.qty_divisor || 1;
-  const basePerUnit = item.price / divisor;
-  if (isPurchaseItem(item)) return basePerUnit;
-  let totalPercent = 0;
-  for (const bonus of getActiveBonuses()) {
-    const pct = state.bonusPercents[bonus.id] || 0;
-    if (!pct) continue;
-    if (!bonus.target_item_name) {
-      totalPercent += pct;
-    } else if (bonus.target_item_name === item.name) {
-      totalPercent += pct;
-    }
-  }
-  return basePerUnit * (1 + totalPercent / 100);
-}
-
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/auth/status');
@@ -113,11 +96,10 @@ function renderItems() {
   list.innerHTML = state.items.map(item => {
     const id = item.id;
     const hasVal = (state.quantities[id] || 0) > 0;
-    const effectivePrice = getEffectivePrice(item);
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
         <div class="item-name">${escapeHtml(item.name)}</div>
-        <div class="item-price">${formatNumber(effectivePrice)}</div>
+        <div class="item-price">${formatNumber(item.price)}</div>
         <input
           type="number"
           class="qty-input"
@@ -156,19 +138,18 @@ function updateResult() {
     const id = item.id;
     const qty = state.quantities[id] || 0;
     const price = state.price[id];
-    const effectivePrice = getEffectivePrice(item);
 
     if (qty > 0) {
       if (price == 1) {
         const name = state.name[id];
         const num = name.match(/\d+/);
-        const score = Math.round(qty * (effectivePrice / num));
+        const score = Math.round(qty * (price / num));
       } else {
-        const score = Math.round(qty * effectivePrice);
+        const score = Math.round(qty * price);
       }
     }
     total += score;
-    breakdown.push({ name: item.name, qty, price: effectivePrice, score });
+    breakdown.push({ name: item.name, qty, price: price, score });
       
   });
 

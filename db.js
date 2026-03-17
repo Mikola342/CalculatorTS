@@ -227,8 +227,8 @@ async function seedItemsFromFallbackIfEmpty() {
       for (const item of items) {
         await client.query(
           `
-          INSERT INTO items (name, price, day, qty_divisor)
-          VALUES ($1, $2, $3, $4)
+          INSERT INTO items (name, price, day)
+          VALUES ($1, $2, $3)
         `,
           [item.name, parseInt(item.price, 10), item.day, item.qtyDivisor || 1]
         );
