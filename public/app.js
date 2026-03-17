@@ -40,6 +40,16 @@ function getActiveBonuses() {
   });
 }
 
+// Возвращает общий множитель очков от всех активных бонусов
+function getTotalBonusMultiplier() {
+  let totalPercent = 0;
+  for (const bonus of getActiveBonuses()) {
+    const v = state.bonusPercents[bonus.id] || 0;
+    totalPercent += v;
+  }
+  return 1 + totalPercent / 100;
+}
+
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/auth/status');
