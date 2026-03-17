@@ -230,7 +230,7 @@ async function seedItemsFromFallbackIfEmpty() {
           INSERT INTO items (name, price, day)
           VALUES ($1, $2, $3)
         `,
-          [item.name, parseInt(item.price, 10), item.day, item.qtyDivisor || 1]
+          [item.name, parseInt(item.price, 10), item.day]
         );
       }
       await client.query('COMMIT');
