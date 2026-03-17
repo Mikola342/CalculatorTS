@@ -31,6 +31,7 @@ async function initDb() {
     await pool.query('DROP TABLE IF EXISTS research_states');
     await pool.query('DROP TABLE IF EXISTS research_items');
     await pool.query('DROP TABLE IF EXISTS items');
+    await pool.query('DROP TABLE IF EXISTS point_bonus_types');
 
   }
 
