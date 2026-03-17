@@ -112,10 +112,10 @@ async function initDb() {
   `);
 
   // Добавляем колонку target_item_name для привязки бонуса к конкретному пункту
-  await pool.query(`
-    ALTER TABLE point_bonus_types
-    ADD COLUMN IF NOT EXISTS target_item_name TEXT
-  `);
+  // await pool.query(`
+  //   ALTER TABLE point_bonus_types
+  //   ADD COLUMN IF NOT EXISTS target_item_name TEXT
+  // `);
 
   // Добавляем колонку группы, если её ещё нет (на случай старых БД)
   await pool.query(`
@@ -124,12 +124,12 @@ async function initDb() {
   `);
 
   // Проставляем target_item_name для уже существующих бонусов с привязкой к пункту
-  await pool.query(`
-    UPDATE point_bonus_types
-    SET target_item_name = 'Завершить разведмиссии: 1'
-    WHERE name = 'Очки за завершение заданий на радаре'
-      AND target_item_name IS NULL
-  `);
+  // await pool.query(`
+  //   UPDATE point_bonus_types
+  //   SET target_item_name = 'Завершить разведмиссии: 1'
+  //   WHERE name = 'Очки за завершение заданий на радаре'
+  //     AND target_item_name IS NULL
+  // `);
 
   // Автозаполнение research_items из JS-справочника, если таблица пуста
   await seedResearchItemsIfEmpty();
@@ -273,7 +273,7 @@ async function seedBonusTypesIfEmpty() {
       for (const bonus of rows) {
         await client.query(
           `
-          INSERT INTO point_bonus_types (name, day, target_item_name)
+          INSERT INTO point_bonus_types (name, day, targetItemName)
           VALUES ($1, $2, $3)
         `,
           [bonus.name, bonus.day || null, bonus.targetItemName || null]
