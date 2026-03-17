@@ -7,8 +7,13 @@ router.get('/', async (req, res) => {
   try {
     const { day } = req.query;
     const result = day
-      ? await pool.query('SELECT id, name, price, day, qty_divisor FROM items WHERE day = $1 ORDER BY id ASC', [day])
-      : await pool.query('SELECT id, name, price, day, qty_divisor FROM items ORDER BY day ASC, id ASC');
+      ? await pool.query(
+          'SELECT id, name, price, day FROM items WHERE day = $1 ORDER BY id ASC',
+          [day]
+        )
+      : await pool.query(
+          'SELECT id, name, price, day FROM items ORDER BY day ASC, id ASC'
+        );
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
