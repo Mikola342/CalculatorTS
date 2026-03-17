@@ -1,9 +1,11 @@
+// Локальное состояние страницы исследований для текущего пользователя
 const researchState = {
   items: [],
   userState: {},
   user: null
 };
 
+// Переводит дни/часы/минуты в общее количество минут
 function minutesFromParts(days, hours, minutes) {
   const d = parseInt(days, 10) || 0;
   const h = parseInt(hours, 10) || 0;
@@ -11,6 +13,7 @@ function minutesFromParts(days, hours, minutes) {
   return d * 24 * 60 + h * 60 + m;
 }
 
+// Читабельный формат интервала в минутах (X д Y ч Z мин)
 function formatMinutes(total) {
   const t = Math.max(0, Math.round(total || 0));
   const days = Math.floor(t / (24 * 60));
@@ -29,6 +32,7 @@ function formatNumberRu(n) {
   return (n || 0).toLocaleString('ru-RU');
 }
 
+// Обёртка над fetch с JSON‑парсингом и понятными ошибками
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
@@ -47,6 +51,7 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
+// Загружает текущего пользователя (если авторизован) и обновляет UI логина
 async function loadCurrentUser() {
   try {
     const data = await fetchJson('/api/users/me', { method: 'GET' });
@@ -79,6 +84,7 @@ function showResearchToast(msg, type = '') {
   }, 3000);
 }
 
+// Загружает список пунктов исследований и состояние пользователя
 async function loadResearchItems() {
   const list = document.getElementById('researchList');
   list.innerHTML =
@@ -93,6 +99,7 @@ async function loadResearchItems() {
   }
 }
 
+// Подтягивает сохранённые уровни/блокировки/оверрайды для пользователя
 async function loadResearchStateForUser() {
   researchState.userState = {};
   if (!researchState.user) return;
@@ -194,6 +201,7 @@ function renderResearchItems() {
   list.innerHTML = html;
 }
 
+// Считывает текущее состояние всех полей формы в удобный массив объектов
 function collectCurrentResearchConfig() {
   const rows = Array.from(document.querySelectorAll('.research-row'));
   const config = [];
@@ -235,6 +243,7 @@ function collectCurrentResearchConfig() {
   return config;
 }
 
+// Жадный алгоритм: выбирает самые выгодные (+1 уровень) улучшения в рамках доступного времени
 function calculateBestPlan() {
   const availableInput = document.getElementById('availableMinutes');
   const availMinutes = parseInt(availableInput.value, 10) || 0;

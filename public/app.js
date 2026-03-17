@@ -1,3 +1,4 @@
+// Глобальное состояние калькулятора VS (текущий день, пункты, бонусы и т.п.)
 const state = {
   currentDay: 'Понедельник',
   items: [],
@@ -17,23 +18,27 @@ const dayIcons = {
   'Пятница': '⚔️'
 };
 
+// Загружает пункты VS для указанного дня с сервера
 async function fetchItems(day) {
   const res = await fetch(`/api/items?day=${encodeURIComponent(day)}`);
   if (!res.ok) throw new Error('Ошибка сервера');
   return res.json();
 }
 
-async function fetchBonuses() {
-  const res = await fetch('/api/bonuses');
+// Загружает список типов бонусов очков
+async function fetchBonuses(day) {
+  const res = await fetch(`/api/bonuses?day=${encodeURIComponent(day)}`);
   if (!res.ok) throw new Error('Ошибка сервера бонусов');
   return res.json();
 }
 
+// Определяет, относится ли пункт к покупкам (на них бонусы не действуют)
 function isPurchaseItem(item) {
   const name = (item.name || '').toLowerCase();
   return name.includes('покупая наборы');
 }
 
+// Возвращает бонусы, которые действуют для текущего выбранного дня
 function getActiveBonuses() {
   const filter = state.bonusDayFilter;
   return state.bonuses.filter((b) => {
@@ -44,6 +49,7 @@ function getActiveBonuses() {
   });
 }
 
+// Считает общий множитель очков от всех активных бонусов
 function getTotalBonusMultiplier() {
   let totalPercent = 0;
   for (const bonus of getActiveBonuses()) {
@@ -53,6 +59,7 @@ function getTotalBonusMultiplier() {
   return 1 + totalPercent / 100;
 }
 
+// Проверяет, залогинен ли администратор (для редактирования пунктов)
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/auth/status');
@@ -64,6 +71,7 @@ async function checkAuthStatus() {
   }
 }
 
+// Проверяет, используется ли PostgreSQL или резервные данные из fallback.js
 async function checkDbStatus() {
   try {
     const items = await fetchItems('Понедельник');
