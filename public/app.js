@@ -40,13 +40,6 @@ function getActiveBonuses() {
   });
 }
 
-function splitTargetItemName(targetItemName) {
-  if (targetItemName.includes('|')) {
-    return targetItemName.split('|').map(part => part.trim());
-  }
-  return [targetItemName.trim()];
-}
-
 function getTotalBonusMultiplier(item) {
   let totalPercent = 0;
   
@@ -60,7 +53,7 @@ function getTotalBonusMultiplier(item) {
     if (!bonus.targetitemname) {
       totalPercent += v;
     } else {
-      const parts = splitTargetItemName(bonus.targetitemname);
+      let parts = bonus.targetitemname.split('|');
 
       parts.forEach(part => {
         if (part == item.name) {
