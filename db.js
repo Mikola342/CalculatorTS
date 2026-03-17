@@ -4,12 +4,23 @@ const { RESEARCH_ITEMS } = require('./data/researchItems');
 const { POINT_BONUS_TYPES } = require('./data/bonusFallback');
 
 const isProduction = process.env.NODE_ENV === 'production';
-const isReplitDb =
-  process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode=disable');
+const connectionString = (process.env.DATABASE_URL || '').trim();
+
+if (!connectionString) {
+  throw new Error(
+    'DATABASE_URL не задан. Укажите строку подключения PostgreSQL в переменной окружения DATABASE_URL.'
+  );
+}
+
+const disableSsl =
+  connectionString.includes('sslmode=disable') ||
+  connectionString.includes('localhost') ||
+  connectionString.includes('127.0.0.1');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isReplitDb ? false : isProduction ? { rejectUnauthorized: false } : false
+  connectionString,
+  // Render/production обычно требует SSL. Локально SSL выключаем.
+  ssl: disableSsl ? false : isProduction ? { rejectUnauthorized: false } : false
 });
 
 // Выполняет все миграции и сиды, которые нужны приложению
