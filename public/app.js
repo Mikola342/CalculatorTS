@@ -41,11 +41,22 @@ function getActiveBonuses() {
 }
 
 // Возвращает общий множитель очков от всех активных бонусов
-function getTotalBonusMultiplier() {
+/**function getTotalBonusMultiplier() {
   let totalPercent = 0;
   for (const bonus of getActiveBonuses()) {
     const v = state.bonusPercents[bonus.id] || 0;
     totalPercent += v;
+  }
+  return 1 + totalPercent / 100;
+}*/
+
+function getTotalBonusMultiplier(item) {
+  let totalPercent = 0;
+  for (const bonus of getActiveBonuses()) {
+    const v = state.bonusPercents[bonus.id] || 0;
+    if (bonus.targetItemName != null && bonus.targetItemName === item.name || bonus.day === 'Все дни') {
+      totalPercent += v;
+    }
   }
   return 1 + totalPercent / 100;
 }
@@ -109,7 +120,7 @@ function renderItems() {
     const basePrice = item.price;
     const effectivePrice = isPurchaseItem(item)
       ? basePrice
-      : Math.round(basePrice * getTotalBonusMultiplier());
+      : Math.round(basePrice * getTotalBonusMultiplier(item));
     
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
@@ -156,7 +167,7 @@ function updateResult() {
       const basePrice = item.price;
       const effectivePrice = isPurchaseItem(item)
         ? basePrice
-        : Math.round(basePrice * getTotalBonusMultiplier());
+        : Math.round(basePrice * getTotalBonusMultiplier(item));
       const strName = item.name;
       const num = strName.match(/(?<=Собрать\s+)\d+/);
       let score;
