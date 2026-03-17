@@ -59,17 +59,20 @@ function getTotalBonusMultiplier(item) {
     console.log('bonusName = ' + bonus.name);
     console.log('itemName = ' + item.name);
     console.log('targetItemName = ' + bonus.targetitemname)
+
     if (!bonus.targetitemname) {
-      // Если targetItemName нет (null/undefined/пустая строка), 
-      // бонус применяется ко ВСЕМ предметам этого дня
       totalPercent += v;
     } else {
-      // Если targetItemName указан, проверяем точное совпадение
-      // (Здесь сработает исправление опечатки)
+      const parts = bonus.targetitemname.includes('|')
+        ? bonus.targetitemname.split('|').map(part => part.trim())
+        : [bonus.targetitemname.trim()];
 
-      if (bonus.targetitemname == item.name) {
+      parts.forEach(part => {
+        if (part == item.name) {
         totalPercent += v;
       }
+      })
+      
     }
   }
   
