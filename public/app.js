@@ -41,7 +41,7 @@ function getActiveBonuses() {
 }
 
 // Возвращает общий множитель очков от всех активных бонусов
-/**function getTotalBonusMultiplier() {
+/*function getTotalBonusMultiplier() {
   let totalPercent = 0;
   for (const bonus of getActiveBonuses()) {
     const v = state.bonusPercents[bonus.id] || 0;
