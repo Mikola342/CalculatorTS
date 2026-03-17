@@ -52,7 +52,7 @@ async function initDb() {
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       day TEXT,
-      targetItemName TEXT,
+      targetItemName TEXT,  
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
