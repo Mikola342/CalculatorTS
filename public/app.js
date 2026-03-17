@@ -53,9 +53,11 @@ function getTotalBonusMultiplier(item) {
     if (!bonus.targetitemname) {
       totalPercent += v;
     } else {
-      let parts = bonus.targetitemname.split('|');
+      let parts = bonus.targetitemname.split(' | ');
+;
 
-      parts.forEach(part => {
+      parts.forEach((part) => {
+        console.log('part = ' + part);
         if (part == item.name) {
         totalPercent += v;
       }
