@@ -94,12 +94,16 @@ function renderItems() {
   }
 
   list.innerHTML = state.items.map(item => {
-    const id = item.id;
+    const id = item.id !== undefined ? item.id : item._id;
     const hasVal = (state.quantities[id] || 0) > 0;
+    const basePrice = item.price;
+    const effectivePrice = isPurchaseItem(item)
+      ? basePrice
+      : Math.round(basePrice * getTotalBonusMultiplier());
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
         <div class="item-name">${escapeHtml(item.name)}</div>
-        <div class="item-price">${formatNumber(item.price)}</div>
+        <div class="item-price">${formatNumber(effectivePrice)}</div>
         <input
           type="number"
           class="qty-input"
@@ -135,22 +139,17 @@ function updateResult() {
   const breakdown = [];
 
   state.items.forEach(item => {
-    const id = item.id;
+    const id = item.id !== undefined ? item.id : item._id;
     const qty = state.quantities[id] || 0;
-    const price = state.price[id];
-
     if (qty > 0) {
-      if (price == 1) {
-        const name = state.name[id];
-        const num = name.match(/\d+/);
-        const score = Math.round(qty * (price / num));
-      } else {
-        const score = Math.round(qty * price);
-      }
+      const basePrice = item.price;
+      const effectivePrice = isPurchaseItem(item)
+        ? basePrice
+        : Math.round(basePrice * getTotalBonusMultiplier());
+      const score = qty * effectivePrice;
+      total += score;
+      breakdown.push({ name: item.name, qty, price: effectivePrice, score });
     }
-    total += score;
-    breakdown.push({ name: item.name, qty, price: price, score });
-      
   });
 
   const totalEl = document.getElementById('totalPoints');
