@@ -110,6 +110,7 @@ function renderItems() {
     const effectivePrice = isPurchaseItem(item)
       ? basePrice
       : Math.round(basePrice * getTotalBonusMultiplier());
+    
     return `
       <div class="item-row ${hasVal ? 'has-value' : ''} ${state.isAdmin ? 'admin-mode' : ''}" id="row-${id}">
         <div class="item-name">${escapeHtml(item.name)}</div>
@@ -156,7 +157,15 @@ function updateResult() {
       const effectivePrice = isPurchaseItem(item)
         ? basePrice
         : Math.round(basePrice * getTotalBonusMultiplier());
-      const score = qty * effectivePrice;
+      const strName = item.name;
+      const num = strName.match(/(?<=Собрать\s+)\d+/);
+      let score;
+      if (num) {
+        const number = Number(num[0]);
+        score = qty * (effectivePrice / number);
+      } else {
+        score = qty * effectivePrice;
+      }
       total += score;
       breakdown.push({ name: item.name, qty, price: effectivePrice, score });
     }
