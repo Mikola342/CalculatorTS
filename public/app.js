@@ -35,8 +35,14 @@ function isPurchaseItem(item) {
 
 function getActiveBonuses() {
   return state.bonuses.filter((b) => {
-    const day = b.day || 'Все дни';
-    return day === 'Все дни' || day === state.currentDay;
+    let days = b.day.split('|');
+
+    days.forEach((day) => {
+      return day === 'Все дни' || day === state.currentDay;
+    })
+
+    // const day = b.day || 'Все дни';
+    // return day === 'Все дни' || day === state.currentDay;
   });
 }
 
@@ -48,15 +54,19 @@ function getTotalBonusMultiplier(item) {
     console.log('-------------------------------');
     if (!bonus.targetitemname) {
       totalPercent += v;
+
       console.log('name = ' + bonus.name);
       console.log('-------------------------------');
+
     } else {
       let parts = bonus.targetitemname.split('|');
       parts.forEach((part) => {
+
         console.log('name = ' + bonus.name);
         console.log('part = ' + part);
-      console.log('-------------------------------');
-        if (part == item.name) {
+        console.log('-------------------------------');
+        
+        if (part === item.name) {
           totalPercent += v;
         }
       });
