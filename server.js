@@ -2,22 +2,30 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
-const { initDb } = require('./db');
+const { initDb, pool } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 if (isProduction) {
-  // Нужен для корректной работы secure-cookie (session) за прокси, например на Render
   app.set('trust proxy', 1);
 }
 
-app.use(cors());
+app.use(cors({
+  origin: isProduction ? (process.env.CORS_ORIGIN || false) : true,
+  credentials: true
+}));
 app.use(express.json());
 app.use(session({
-  secret: process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || 'fallback-secret-key',
+  store: new pgSession({
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
+  secret: process.env.SESSION_SECRET || 'fallback-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -32,15 +40,26 @@ const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const researchRouter = require('./routes/research');
 const bonusesRouter = require('./routes/bonuses');
+const heroesRouter = require('./routes/heroes');
 
 app.use('/api/items', itemsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/research', researchRouter);
 app.use('/api/bonuses', bonusesRouter);
+app.use('/api/heroes', heroesRouter);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Маршрут не найден' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Необработанная ошибка:', err);
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
 async function start() {

@@ -1,19 +1,25 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { password } = req.body;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminHash = process.env.ADMIN_PASSWORD;
 
-  if (!adminPassword) {
+  if (!adminHash) {
     return res.status(500).json({ error: 'Пароль администратора не настроен' });
   }
 
-  if (password === adminPassword) {
-    req.session.isAdmin = true;
-    res.json({ success: true, message: 'Вход выполнен' });
-  } else {
-    res.status(401).json({ error: 'Неверный пароль' });
+  try {
+    const ok = await bcrypt.compare(password, adminHash);
+    if (ok) {
+      req.session.isAdmin = true;
+      res.json({ success: true, message: 'Вход выполнен' });
+    } else {
+      res.status(401).json({ error: 'Неверный пароль' });
+    }
+  } catch {
+    res.status(500).json({ error: 'Ошибка проверки пароля' });
   }
 });
 

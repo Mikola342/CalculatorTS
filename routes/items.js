@@ -3,6 +3,8 @@ const router = express.Router();
 const { pool } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 
+const VALID_DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница'];
+
 router.get('/', async (req, res) => {
   try {
     const { day } = req.query;
@@ -26,6 +28,9 @@ router.post('/', requireAdmin, async (req, res) => {
     if (!name || price == null || !day) {
       return res.status(400).json({ error: 'Заполните все поля' });
     }
+    if (!VALID_DAYS.includes(day)) {
+      return res.status(400).json({ error: `Недопустимый день. Допустимые: ${VALID_DAYS.join(', ')}` });
+    }
     const result = await pool.query(
       'INSERT INTO items (name, price, day) VALUES ($1, $2, $3) RETURNING *',
       [name, parseInt(price, 10), day]
@@ -39,6 +44,9 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { name, price, day } = req.body;
+    if (day && !VALID_DAYS.includes(day)) {
+      return res.status(400).json({ error: `Недопустимый день. Допустимые: ${VALID_DAYS.join(', ')}` });
+    }
     const result = await pool.query(
       'UPDATE items SET name=$1, price=$2, day=$3 WHERE id=$4 RETURNING *',
       [name, parseInt(price, 10), day, req.params.id]

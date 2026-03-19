@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const { FALLBACK_ITEMS } = require('./data/fallback');
 const { RESEARCH_ITEMS } = require('./data/researchItems');
 const { POINT_BONUS_TYPES } = require('./data/bonusFallback');
+const { HEROES_DATA, FRAGMENT_COSTS_DATA } = require('./data/heroesData');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const connectionString = (process.env.DATABASE_URL || '').trim();
@@ -28,11 +29,13 @@ async function initDb() {
   // Полный сброс схемы исследований и пунктов (удобно при смене структуры таблиц).
   // ВНИМАНИЕ: это удалит все пользовательские данные по исследованиям и пунктам.
   if (process.env.DB_RESET === 'true') {
+    await pool.query('DROP TABLE IF EXISTS hero_fragments');
+    await pool.query('DROP TABLE IF EXISTS fragment_costs');
+    await pool.query('DROP TABLE IF EXISTS heroes');
     await pool.query('DROP TABLE IF EXISTS research_states');
     await pool.query('DROP TABLE IF EXISTS research_items');
     await pool.query('DROP TABLE IF EXISTS items');
     await pool.query('DROP TABLE IF EXISTS point_bonus_types');
-
   }
 
   // Основная таблица с пунктами (как и раньше)
@@ -119,6 +122,43 @@ async function initDb() {
 
   // Автозаполнение point_bonus_types из POINT_BONUS_TYPES, если таблица пуста
   await seedBonusTypesIfEmpty();
+
+  // Таблица каталога героев
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS heroes (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      rarity TEXT NOT NULL CHECK (rarity IN ('R','SR','SSR'))
+    )
+  `);
+
+  // Таблица стоимостей фрагментов
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS fragment_costs (
+      id SERIAL PRIMARY KEY,
+      stars INTEGER NOT NULL CHECK (stars >= 0 AND stars <= 9),
+      rank  INTEGER NOT NULL CHECK (rank  >= 0 AND rank  <= 5),
+      cost  INTEGER,
+      UNIQUE(stars, rank)
+    )
+  `);
+
+  // Прогресс героев пользователя
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS hero_fragments (
+      id SERIAL PRIMARY KEY,
+      user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      hero_id   INTEGER NOT NULL REFERENCES heroes(id) ON DELETE CASCADE,
+      stars     INTEGER NOT NULL DEFAULT 0 CHECK (stars >= 0 AND stars <= 9),
+      rank      INTEGER NOT NULL DEFAULT 0 CHECK (rank  >= 0 AND rank  <= 5),
+      fragments INTEGER NOT NULL DEFAULT 0 CHECK (fragments >= 0),
+      UNIQUE(user_id, hero_id)
+    )
+  `);
+
+  // Сиды героев и стоимостей
+  await seedHeroesIfEmpty();
+  await seedFragmentCostsIfEmpty();
 }
 
 async function seedResearchItemsIfEmpty() {
@@ -269,6 +309,60 @@ async function seedBonusTypesIfEmpty() {
     }
   } catch (err) {
     console.error('Общая ошибка автоимпорта point_bonus_types:', err);
+  }
+}
+
+async function seedHeroesIfEmpty() {
+  try {
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS cnt FROM heroes');
+    if (rows[0].cnt > 0) return;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const hero of HEROES_DATA) {
+        await client.query(
+          'INSERT INTO heroes (name, rarity) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [hero.name, hero.rarity]
+        );
+      }
+      await client.query('COMMIT');
+      console.log(`Импортировано ${HEROES_DATA.length} героев в heroes`);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Ошибка при импорте heroes:', err);
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Общая ошибка seedHeroesIfEmpty:', err);
+  }
+}
+
+async function seedFragmentCostsIfEmpty() {
+  try {
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS cnt FROM fragment_costs');
+    if (rows[0].cnt > 0) return;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const row of FRAGMENT_COSTS_DATA) {
+        await client.query(
+          'INSERT INTO fragment_costs (stars, rank, cost) VALUES ($1, $2, $3) ON CONFLICT (stars, rank) DO NOTHING',
+          [row.stars, row.rank, row.cost]
+        );
+      }
+      await client.query('COMMIT');
+      console.log(`Импортировано ${FRAGMENT_COSTS_DATA.length} записей в fragment_costs`);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Ошибка при импорте fragment_costs:', err);
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Общая ошибка seedFragmentCostsIfEmpty:', err);
   }
 }
 

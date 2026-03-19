@@ -45,24 +45,15 @@ function getTotalBonusMultiplier(item) {
   
   for (const bonus of getActiveBonuses()) {
     const v = state.bonusPercents[bonus.id] || 0;
-    // 1. Проверка привязки к предмету
-    console.log('bonusName = ' + bonus.name);
-    console.log('itemName = ' + item.name);
-    console.log('targetItemName = ' + bonus.targetitemname)
-
     if (!bonus.targetitemname) {
       totalPercent += v;
     } else {
-      const bonusTargetItemName = bonus.targetitemname;
-      let parts = bonusTargetItemName.split('|');
-;
-
+      const parts = bonus.targetitemname.split('|');
       parts.forEach((part) => {
-        console.log('part = ' + part);
         if (part == item.name) {
-        totalPercent += v;
-      }
-      })
+          totalPercent += v;
+        }
+      });
       
     }
   }
@@ -460,7 +451,7 @@ async function init() {
 
   if (itemsResult.status === 'fulfilled') {
     state.items = itemsResult.value;
-    state.isDbConnected = state.items.length > 0 && typeof state.items[0].id === 'number';
+    state.isDbConnected = itemsResult.status === 'fulfilled';
   } else {
     state.isDbConnected = false;
   }

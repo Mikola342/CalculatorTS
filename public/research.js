@@ -263,20 +263,21 @@ function calculateBestPlan() {
 
   for (const item of config) {
     if (item.blocked) continue;
-    // Прокачка считается только на +1 уровень, а не до максимального
-    if (item.currentLevel >= item.maxLevel) continue;
+    const levelsLeft = item.maxLevel - item.currentLevel;
+    if (levelsLeft <= 0) continue;
 
     const ratio =
       item.timeMinutes > 0 ? item.powerPerLevel / item.timeMinutes : 0;
 
-    upgrades.push({
-      researchId: item.id,
-      name: item.name,
-      stepIndex: 1,
-      powerGain: item.powerPerLevel,
-      timeCost: item.timeMinutes,
-      ratio
-    });
+    for (let step = 0; step < levelsLeft; step++) {
+      upgrades.push({
+        researchId: item.id,
+        name: item.name,
+        powerGain: item.powerPerLevel,
+        timeCost: item.timeMinutes,
+        ratio
+      });
+    }
   }
 
   if (!upgrades.length) {

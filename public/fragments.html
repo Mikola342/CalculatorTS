@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор фрагментов</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="bg-animated">
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚔️</div>
+        <div class="logo-text">
+          <span class="logo-title">VS CALCULATOR</span>
+          <span class="logo-sub">Фрагменты</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <nav class="top-nav">
+          <a href="/" class="nav-link">Очки VS</a>
+          <a href="/research.html" class="nav-link">Исследования</a>
+          <a href="/fragments.html" class="nav-link active">Фрагменты</a>
+        </nav>
+        <div class="user-auth" id="userAuth">
+          <span id="userLabel" class="user-label">Гость</span>
+          <button class="auth-btn" id="userAuthBtn">Войти</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="content-grid fragments-grid">
+
+      <!-- Левая панель: список героев -->
+      <div class="calculator-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Герои</h2>
+          <button class="reset-btn" id="resetAllBtn" title="Сбросить всех героев">
+            ↺ Сброс
+          </button>
+        </div>
+
+        <div id="heroesContainer">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Загрузка героев...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая панель: универсальные фрагменты + результаты -->
+      <div class="result-panel">
+
+        <div class="universal-panel">
+          <h3>Универсальные фрагменты</h3>
+          <div class="universal-inputs">
+            <div class="universal-row">
+              <span class="rarity-badge rarity-r">R</span>
+              <input type="number" class="universal-input" id="univR"
+                     min="0" value="0" placeholder="0" />
+            </div>
+            <div class="universal-row">
+              <span class="rarity-badge rarity-sr">SR</span>
+              <input type="number" class="universal-input" id="univSR"
+                     min="0" value="0" placeholder="0" />
+            </div>
+            <div class="universal-row">
+              <span class="rarity-badge rarity-ssr">SSR</span>
+              <input type="number" class="universal-input" id="univSSR"
+                     min="0" value="0" placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="frag-actions">
+          <button class="primary-btn" id="calculateBtn">⚡ Рассчитать</button>
+          <button class="secondary-btn" id="saveStateBtn">💾 Сохранить</button>
+        </div>
+
+        <!-- Итого использовано -->
+        <div class="result-summary">
+          <div class="summary-card rarity-r-card">
+            <div class="summary-label">Исп. R</div>
+            <div class="summary-value" id="totalR">—</div>
+          </div>
+          <div class="summary-card rarity-sr-card">
+            <div class="summary-label">Исп. SR</div>
+            <div class="summary-value" id="totalSR">—</div>
+          </div>
+          <div class="summary-card rarity-ssr-card">
+            <div class="summary-label">Исп. SSR</div>
+            <div class="summary-value" id="totalSSR">—</div>
+          </div>
+        </div>
+
+        <!-- Разбивка по героям -->
+        <div class="result-allocation">
+          <h3>Разбивка по героям</h3>
+          <div id="allocationList">
+            <p class="no-result">Нажмите «Рассчитать» чтобы увидеть результат</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Модал авторизации -->
+    <div class="modal-overlay" id="userLoginOverlay">
+      <div class="modal">
+        <button class="modal-close" id="userModalClose">✕</button>
+        <div class="modal-icon">🧬</div>
+        <h2 class="modal-title">Вход / регистрация</h2>
+        <p class="modal-sub">Войдите, чтобы сохранять прогресс героев</p>
+        <form class="login-form" id="userLoginForm">
+          <div class="input-wrap">
+            <input type="text" id="usernameInput" placeholder="Логин" autocomplete="username" required />
+          </div>
+          <div class="input-wrap">
+            <input type="password" id="userPasswordInput" placeholder="Пароль" autocomplete="current-password" required />
+          </div>
+          <div class="auth-switch">
+            <label>
+              <input type="checkbox" id="isRegisterCheckbox" />
+              <span>Я новый пользователь (регистрация)</span>
+            </label>
+          </div>
+          <p class="login-error" id="userLoginError"></p>
+          <button type="submit" class="login-btn">Продолжить</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="fragToast"></div>
+  </main>
+
+  <script src="fragments.js"></script>
+</body>
+</html>

@@ -998,3 +998,329 @@ body {
   height: 14px;
   accent-color: var(--accent-secondary);
 }
+
+/* ===================== FRAGMENTS PAGE ===================== */
+
+.fragments-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .fragments-grid { grid-template-columns: 1fr; }
+}
+
+.rarity-section { margin-bottom: 20px; }
+
+.rarity-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rarity-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  min-width: 38px;
+}
+
+.rarity-badge.rarity-r {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: var(--accent-secondary);
+}
+
+.rarity-badge.rarity-sr {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: var(--accent);
+}
+
+.rarity-badge.rarity-ssr {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #a855f7;
+}
+
+.rarity-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hero-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1.5fr) 60px 60px 90px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  margin-bottom: 5px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+}
+
+.hero-row:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border);
+}
+
+.hero-row.has-result {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.hero-name-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-name-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hero-result-hint {
+  font-size: 10px;
+  color: var(--success);
+  display: none;
+}
+
+.hero-row.has-result .hero-result-hint { display: block; }
+
+.hero-col-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.hero-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-input:focus {
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 8px var(--accent-sec-glow);
+}
+
+.max-btn {
+  padding: 6px 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 8px;
+  color: var(--success);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.max-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
+.hero-col-header {
+  display: grid;
+  grid-template-columns: minmax(100px, 1.5fr) 60px 60px 90px 60px;
+  gap: 8px;
+  padding: 4px 10px 6px;
+  margin-bottom: 2px;
+}
+
+.universal-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.universal-panel h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.universal-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.universal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.universal-row .rarity-badge {
+  flex-shrink: 0;
+  min-width: 44px;
+}
+
+.universal-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.universal-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.frag-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.result-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.summary-card.rarity-r-card .summary-value { color: var(--accent-secondary); }
+.summary-card.rarity-sr-card .summary-value { color: var(--accent); }
+.summary-card.rarity-ssr-card .summary-value { color: #a855f7; }
+
+.result-allocation {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.result-allocation h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.alloc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.alloc-item:last-child { border-bottom: none; }
+
+.alloc-hero {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alloc-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.alloc-frags {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.alloc-frags.rarity-r  { color: var(--accent-secondary); }
+.alloc-frags.rarity-sr { color: var(--accent); }
+.alloc-frags.rarity-ssr{ color: #a855f7; }
+
+.no-result {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 0;
+}
+
+@media (max-width: 640px) {
+  .hero-row {
+    grid-template-columns: 1fr 52px 52px 80px 52px;
+    gap: 5px;
+    padding: 7px 6px;
+  }
+  .hero-col-header {
+    grid-template-columns: 1fr 52px 52px 80px 52px;
+    gap: 5px;
+  }
+  .result-summary { grid-template-columns: 1fr; }
+}
