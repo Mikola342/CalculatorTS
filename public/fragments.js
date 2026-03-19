@@ -177,7 +177,7 @@ function renderHeroes() {
           <input type="number" class="hero-input rank-input"  min="0" max="5" value="0" />
           <input type="number" class="hero-input frags-input" min="0"       value="0" />
           <button class="max-btn"    data-action="max"   data-hero-id="${hero.id}">MAX</button>
-          <button class="block-btn"  data-action="block" data-hero-id="${hero.id}" title="Персонаж недоступен">✓</button>
+          <button class="block-btn"  data-action="block" data-hero-id="${hero.id}" title="Персонаж недоступен">ДОСТУПЕН</button>
         </div>`;
     }
     html += '</div>';
@@ -226,7 +226,7 @@ function handleBlockClick(heroId) {
 
   const btn = row.querySelector('.block-btn');
   if (btn) {
-    btn.textContent = newBlocked ? '✗' : '✓';
+    btn.textContent = newBlocked ? 'НЕ ДОСТУПЕН' : 'ДОСТУПЕН';
     btn.classList.toggle('block-btn-active', newBlocked);
   }
 
@@ -385,7 +385,7 @@ async function loadUserState() {
         row.dataset.blocked = 'true';
         row.classList.add('hero-blocked');
         const btn = row.querySelector('.block-btn');
-        if (btn) { btn.textContent = '✗'; btn.classList.add('block-btn-active'); }
+        if (btn) { btn.textContent = 'НЕ ДОСТУПЕН'; btn.classList.add('block-btn-active'); }
         const hint = document.getElementById(`hint-${entry.hero_id}`);
         if (hint) hint.textContent = 'Недоступен';
       }

@@ -152,8 +152,15 @@ async function initDb() {
       stars     INTEGER NOT NULL DEFAULT 0 CHECK (stars >= 0 AND stars <= 9),
       rank      INTEGER NOT NULL DEFAULT 0 CHECK (rank  >= 0 AND rank  <= 5),
       fragments INTEGER NOT NULL DEFAULT 0 CHECK (fragments >= 0),
+      blocked   BOOLEAN NOT NULL DEFAULT FALSE,
       UNIQUE(user_id, hero_id)
     )
+  `);
+
+  // На старых БД добавляем колонку blocked (если не было)
+  await pool.query(`
+    ALTER TABLE hero_fragments
+    ADD COLUMN IF NOT EXISTS blocked BOOLEAN NOT NULL DEFAULT FALSE
   `);
 
   // Сиды героев и стоимостей

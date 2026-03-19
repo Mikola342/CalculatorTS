@@ -28,7 +28,7 @@ router.get('/fragment-costs', async (req, res) => {
 router.get('/state', requireUser, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT hero_id, stars, rank, fragments FROM hero_fragments WHERE user_id = $1',
+      'SELECT hero_id, stars, rank, fragments, blocked FROM hero_fragments WHERE user_id = $1',
       [req.session.userId]
     );
     res.json(result.rows);
@@ -48,7 +48,8 @@ router.post('/state', requireUser, async (req, res) => {
     try {
       await client.query('BEGIN');
       for (const entry of entries) {
-        const { heroId, stars, rank, fragments } = entry;
+        const { heroId, stars, rank, fragments, blocked } = entry;
+        const isBlocked = !!blocked;
         if (
           !Number.isInteger(heroId) ||
           !Number.isInteger(stars) || stars < 0 || stars > 9 ||
@@ -57,11 +58,11 @@ router.post('/state', requireUser, async (req, res) => {
         ) continue;
 
         await client.query(
-          `INSERT INTO hero_fragments (user_id, hero_id, stars, rank, fragments)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO hero_fragments (user_id, hero_id, stars, rank, fragments, blocked)
+           VALUES ($1, $2, $3, $4, $5, $6)
            ON CONFLICT (user_id, hero_id)
-           DO UPDATE SET stars = $3, rank = $4, fragments = $5`,
-          [req.session.userId, heroId, stars, rank, fragments]
+           DO UPDATE SET stars = $3, rank = $4, fragments = $5, blocked = $6`,
+          [req.session.userId, heroId, stars, rank, fragments, isBlocked]
         );
       }
       await client.query('COMMIT');

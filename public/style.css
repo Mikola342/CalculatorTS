@@ -1043,15 +1043,15 @@ body {
 }
 
 .rarity-badge.rarity-sr {
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.5);
-  color: var(--accent);
-}
-
-.rarity-badge.rarity-ssr {
   background: rgba(168, 85, 247, 0.15);
   border: 1px solid rgba(168, 85, 247, 0.5);
   color: #a855f7;
+}
+
+.rarity-badge.rarity-ssr {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: var(--accent);
 }
 
 .rarity-title {
@@ -1153,6 +1153,38 @@ body {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
 }
 
+/* Кнопка "Недоступен" (персонаж исключается из распределения) */
+.block-btn {
+  padding: 6px 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.block-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.block-btn-active {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #e9d5ff;
+}
+
+.hero-blocked {
+  opacity: 0.6;
+  filter: grayscale(0.25);
+}
+
 .hero-col-header {
   display: grid;
   grid-template-columns: minmax(100px, 1.5fr) 60px 60px 90px 60px;
@@ -1251,8 +1283,8 @@ body {
 }
 
 .summary-card.rarity-r-card .summary-value { color: var(--accent-secondary); }
-.summary-card.rarity-sr-card .summary-value { color: var(--accent); }
-.summary-card.rarity-ssr-card .summary-value { color: #a855f7; }
+.summary-card.rarity-sr-card .summary-value { color: #a855f7; }
+.summary-card.rarity-ssr-card .summary-value { color: var(--accent); }
 
 .result-allocation {
   background: var(--bg-card);
@@ -1302,8 +1334,8 @@ body {
 }
 
 .alloc-frags.rarity-r  { color: var(--accent-secondary); }
-.alloc-frags.rarity-sr { color: var(--accent); }
-.alloc-frags.rarity-ssr{ color: #a855f7; }
+.alloc-frags.rarity-sr { color: #a855f7; }
+.alloc-frags.rarity-ssr{ color: var(--accent); }
 
 .no-result {
   font-size: 12px;
