@@ -45,13 +45,17 @@ function getTotalBonusMultiplier(item) {
   
   for (const bonus of getActiveBonuses()) {
     const v = state.bonusPercents[bonus.id] || 0;
+    console.log('-------------------------------');
     if (!bonus.targetitemname) {
       totalPercent += v;
       console.log('name = ' + bonus.name);
+      console.log('-------------------------------');
     } else {
       let parts = bonus.targetitemname.split('|');
       parts.forEach((part) => {
+        console.log('name = ' + bonus.name);
         console.log('part = ' + part);
+      console.log('-------------------------------');
         if (part == item.name) {
           totalPercent += v;
         }
