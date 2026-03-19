@@ -73,7 +73,8 @@ function getRowState(row) {
     stars:     Math.max(0, Math.min(9, parseInt(row.querySelector('.stars-input').value) || 0)),
     rank:      Math.max(0, Math.min(5, parseInt(row.querySelector('.rank-input').value)  || 0)),
     fragments: Math.max(0, parseInt(row.querySelector('.frags-input').value) || 0),
-    blocked:   row.dataset.blocked === 'true'
+    blocked:   row.dataset.blocked === 'true',
+    maxed:     row.dataset.maxed === 'true'
   };
 }
 
@@ -86,7 +87,8 @@ function distributeUniversal(rarity, universalCount) {
     const row = document.querySelector(`.hero-row[data-hero-id="${hero.id}"]`);
     if (!row) continue;
     const rs = getRowState(row);
-    if (rs.blocked) continue;
+    // MAX и НЕ ДОСТУПЕН исключают героя из распределения
+    if (rs.blocked || rs.maxed) continue;
 
     const specific = calcHeroUpgrades(rs.stars, rs.rank, rs.fragments);
     const capacity = calcRemainingCapacity(specific.finalStars, specific.finalRank);
@@ -168,7 +170,7 @@ function renderHeroes() {
 
     for (const hero of heroes) {
       html += `
-        <div class="hero-row" data-hero-id="${hero.id}" data-rarity="${hero.rarity}" data-blocked="false">
+        <div class="hero-row" data-hero-id="${hero.id}" data-rarity="${hero.rarity}" data-blocked="false" data-maxed="false">
           <div class="hero-name-col">
             <span class="hero-name-text">${hero.name}</span>
             <span class="hero-result-hint" id="hint-${hero.id}"></span>
@@ -177,7 +179,7 @@ function renderHeroes() {
           <input type="number" class="hero-input rank-input"  min="0" max="5" value="0" />
           <input type="number" class="hero-input frags-input" min="0"       value="0" />
           <button class="max-btn"    data-action="max"   data-hero-id="${hero.id}">MAX</button>
-          <button class="block-btn"  data-action="block" data-hero-id="${hero.id}" title="Персонаж недоступен">ДОСТУПЕН</button>
+          <button class="block-btn"  data-action="block" data-hero-id="${hero.id}" title="Персонаж недоступен">❌</button>
         </div>`;
     }
     html += '</div>';
@@ -189,6 +191,8 @@ function renderHeroes() {
 function handleMaxClick(heroId) {
   const row = document.querySelector(`.hero-row[data-hero-id="${heroId}"]`);
   if (!row) return;
+
+  // НЕ ДОСТУПЕН исключает кнопку MAX, чтобы не путать состояние
   if (row.dataset.blocked === 'true') return;
 
   const rs = getRowState(row);
@@ -197,12 +201,30 @@ function handleMaxClick(heroId) {
     return;
   }
 
-  const result = calcHeroUpgrades(rs.stars, rs.rank, rs.fragments);
-  row.querySelector('.stars-input').value = result.finalStars;
-  row.querySelector('.rank-input').value  = result.finalRank;
+  const isMaxed = row.dataset.maxed === 'true';
+  const nextMaxed = !isMaxed;
+
+  // MAX - это режим "исключено из алгоритма" + подсветка.
+  // Повторный клик снимает режим.
+  row.dataset.maxed = String(nextMaxed);
+  row.classList.toggle('hero-maxed', nextMaxed);
+
+  if (nextMaxed) {
+    const result = calcHeroUpgrades(rs.stars, rs.rank, rs.fragments);
+    row.querySelector('.stars-input').value = result.finalStars;
+    row.querySelector('.rank-input').value  = result.finalRank;
+  }
 
   const hint = document.getElementById(`hint-${heroId}`);
   if (hint) {
+    // Если выключили MAX — сбрасываем подсказку
+    if (!nextMaxed) {
+      hint.textContent = '';
+      row.classList.remove('has-result');
+      return;
+    }
+
+    const result = calcHeroUpgrades(rs.stars, rs.rank, rs.fragments);
     if (result.levelsGained > 0) {
       hint.textContent = `+${result.levelsGained} ур. (исп. ${result.fragmentsUsed} фр.)`;
       row.classList.add('has-result');
@@ -226,7 +248,8 @@ function handleBlockClick(heroId) {
 
   const btn = row.querySelector('.block-btn');
   if (btn) {
-    btn.textContent = newBlocked ? 'НЕ ДОСТУПЕН' : 'ДОСТУПЕН';
+    // По ТЗ: при нажатии рамка красная и кнопка меняется на ✅
+    btn.textContent = newBlocked ? '✅' : '❌';
     btn.classList.toggle('block-btn-active', newBlocked);
   }
 
@@ -311,6 +334,7 @@ function calculate() {
   const heroSpecific = [];
   document.querySelectorAll('.hero-row').forEach(row => {
     if (row.dataset.blocked === 'true') return;
+    if (row.dataset.maxed === 'true') return;
     const heroId = parseInt(row.dataset.heroId);
     const hero = state.heroes.find(h => h.id === heroId);
     if (!hero) return;
@@ -385,7 +409,7 @@ async function loadUserState() {
         row.dataset.blocked = 'true';
         row.classList.add('hero-blocked');
         const btn = row.querySelector('.block-btn');
-        if (btn) { btn.textContent = 'НЕ ДОСТУПЕН'; btn.classList.add('block-btn-active'); }
+        if (btn) { btn.textContent = '✅'; btn.classList.add('block-btn-active'); }
         const hint = document.getElementById(`hint-${entry.hero_id}`);
         if (hint) hint.textContent = 'Недоступен';
       }
@@ -431,11 +455,13 @@ function resetAll() {
     row.querySelector('.frags-input').value = 0;
     row.classList.remove('has-result', 'hero-blocked');
     row.dataset.blocked = 'false';
+    row.dataset.maxed = 'false';
+    row.classList.remove('hero-maxed');
     const heroId = row.dataset.heroId;
     const hint = document.getElementById(`hint-${heroId}`);
     if (hint) hint.textContent = '';
     const blockBtn = row.querySelector('.block-btn');
-    if (blockBtn) { blockBtn.textContent = '✓'; blockBtn.classList.remove('block-btn-active'); }
+    if (blockBtn) { blockBtn.textContent = '❌'; blockBtn.classList.remove('block-btn-active'); }
   });
   ['univR', 'univSR', 'univSSR'].forEach(id => {
     const el = document.getElementById(id);

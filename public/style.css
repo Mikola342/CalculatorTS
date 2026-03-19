@@ -1064,7 +1064,8 @@ body {
 
 .hero-row {
   display: grid;
-  grid-template-columns: minmax(100px, 1.5fr) 60px 60px 90px 60px;
+  /* 6 колонок: название, ★, ранг, фрагм., MAX, блок */
+  grid-template-columns: minmax(80px, 1fr) 60px 60px 90px 70px 110px;
   gap: 8px;
   align-items: center;
   padding: 8px 10px;
@@ -1089,12 +1090,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .hero-name-text {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hero-result-hint {
@@ -1183,11 +1188,19 @@ body {
 .hero-blocked {
   opacity: 0.6;
   filter: grayscale(0.25);
+  border-color: rgba(239, 68, 68, 0.7) !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+}
+
+.hero-maxed {
+  border-color: rgba(245, 158, 11, 0.85) !important;
+  background: rgba(245, 158, 11, 0.06) !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.18);
 }
 
 .hero-col-header {
   display: grid;
-  grid-template-columns: minmax(100px, 1.5fr) 60px 60px 90px 60px;
+  grid-template-columns: minmax(80px, 1fr) 60px 60px 90px 70px 110px;
   gap: 8px;
   padding: 4px 10px 6px;
   margin-bottom: 2px;
